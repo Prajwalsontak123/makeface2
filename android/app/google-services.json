@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "861805678431",
+    "project_id": "makeface2-b1b26",
+    "storage_bucket": "makeface2-b1b26.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:861805678431:android:611c7faf8aeb3b7514f0ea",
+        "android_client_info": {
+          "package_name": "com.example.makeface2"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "861805678431-cos12m22bofl8to1aetf1ick09p6lnqf.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQyN__HFIFKcKR-3dhqTBPDhWFqKfIqdY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "861805678431-cos12m22bofl8to1aetf1ick09p6lnqf.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "861805678431-dt4epqu459dgn0b8td8v4qt1kgj56ah2.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.makeface2"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
