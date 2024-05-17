@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import 'anime_chat.dart'; // Import the AnimeChatScreen
-import 'circle_screen.dart'; // Import the CircleScreen
+import 'circle_screen.dart';
 import 'home_screen.dart';
 
 class ProfileHome extends StatefulWidget {
@@ -12,9 +13,10 @@ class ProfileHome extends StatefulWidget {
 }
 
 class _ProfileHomeState extends State<ProfileHome> {
-  late String _userName = ''; // Initialize _userName with an empty string
+  late String _userName = '';
   late String _userId;
-  late String _userBio = ''; // Initialize _userBio with an empty string
+  late String _userBio = '';
+  late String _profilePicUrl = '';
 
   @override
   void initState() {
@@ -23,12 +25,10 @@ class _ProfileHomeState extends State<ProfileHome> {
   }
 
   Future<void> fetchUserData() async {
-    // Get the current user's ID from Firebase Authentication
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       _userId = user.uid;
 
-      // Access Firestore collection 'users' and document with user's ID
       DocumentSnapshot<Map<String, dynamic>> snapshot = await FirebaseFirestore
           .instance
           .collection('users')
@@ -36,11 +36,11 @@ class _ProfileHomeState extends State<ProfileHome> {
           .get();
 
       if (snapshot.exists) {
-        // Get the user's name and bio from Firestore document data
         setState(() {
-          _userName = snapshot.data()!['name'];
-          _userBio = snapshot.data()!['bio'] ??
-              ''; // If bio is null, use an empty string
+          _userName = snapshot.data()?['name'] ?? '';
+          _userBio = snapshot.data()?['bio'] ?? '';
+          _profilePicUrl = snapshot.data()?['profilePicUrl'] ??
+              'https://via.placeholder.com/150';
         });
       }
     }
@@ -50,7 +50,7 @@ class _ProfileHomeState extends State<ProfileHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Profile'),
+        title: Text(_userName),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -60,165 +60,106 @@ class _ProfileHomeState extends State<ProfileHome> {
             );
           },
         ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit),
+            onPressed: () {
+              // Navigate to EditProfileScreen
+            },
+          ),
+        ],
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          // Profile Header Section
-          Container(
-            padding: EdgeInsets.all(20.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    CircleAvatar(
-                      radius: 50.0,
-                      // You can add user's profile picture here
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        // Navigate to EditProfileScreen
-                      },
-                      child: Text('Edit Profile'),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 20.0),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _userName, // Display user's name here
-                      style: TextStyle(
-                        fontSize: 24.0,
-                        fontWeight: FontWeight.bold,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Profile Header Section
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    children: [
+                      CircleAvatar(
+                        radius: 50.0,
+                        backgroundImage: NetworkImage(_profilePicUrl),
                       ),
-                    ),
-                    SizedBox(height: 5.0),
-                    Text(
-                      _userBio, // Display user's bio here
-                      style: TextStyle(
-                        fontSize: 16.0,
-                        color: Colors.grey,
+                      SizedBox(height: 10.0),
+                      ElevatedButton(
+                        onPressed: () {},
+                        child: Text('Edit Profile'),
                       ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    SizedBox(height: 10.0),
-                    Row(
+                    ],
+                  ),
+                  SizedBox(width: 16.0),
+                  Expanded(
+                    child: Column(
                       children: [
-                        // You can add user's posts and followers count here
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            Text(
-                              '1.5k',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(height: 5.0),
-                            Text(
-                              'Posts',
-                              style: TextStyle(color: Colors.grey),
-                            ),
+                            _buildStatColumn("Posts", "20"),
+                            _buildStatColumn("Followers", "2.3m"),
+                            _buildStatColumn("Following", "2.0k"),
                           ],
                         ),
-                        SizedBox(width: 20.0),
+                        SizedBox(
+                            height: 10.0), // Add space between stats and bio
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              '2.3m',
-                              style: TextStyle(fontWeight: FontWeight.bold),
+                              _userName,
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold, fontSize: 18),
                             ),
-                            SizedBox(height: 5.0),
-                            Text(
-                              'Followers',
-                              style: TextStyle(color: Colors.grey),
-                            ),
-                          ],
-                        ),
-                        SizedBox(width: 20.0),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              '2.0k',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            SizedBox(height: 5.0),
-                            Text(
-                              'Following',
-                              style: TextStyle(color: Colors.grey),
-                            ),
+                            Text(_userBio),
                           ],
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          // Profile Posts Section
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 3,
-                mainAxisSpacing: 2.0,
-                crossAxisSpacing: 2.0,
+                  ),
+                ],
               ),
-              itemCount: 30, // Replace with actual number of posts
-              itemBuilder: (BuildContext context, int index) {
-                return Image.network(
-                  'https://via.placeholder.com/150',
-                  fit: BoxFit.cover,
-                );
-              },
             ),
-          ),
-        ],
+            Divider(),
+            _buildPostGrid(),
+          ],
+        ),
       ),
       bottomNavigationBar: BottomNavigationBar(
         showSelectedLabels: false, // Hide labels for selected item
         showUnselectedLabels: false, // Hide labels for unselected items
         selectedIconTheme: IconThemeData(color: Colors.black),
         unselectedIconTheme: IconThemeData(color: Colors.black),
-        currentIndex: 4, // Set the current index to 4 (User Profile)
-        onTap: (index) {
+        currentIndex: 4, // Set the current index to 4 (Profile)
+        onTap: (int index) {
           // Navigate to the corresponding screen based on the tapped index
           switch (index) {
             case 0:
-              // Navigate to HomeScreen
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => HomeScreen()),
               );
               break;
             case 1:
-              // Navigate to AnimeChatScreen when Incognito Mode icon is tapped
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => AnimeChatScreen()),
               );
               break;
             case 2:
-              // Navigate to CircleScreen
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => CircleScreen()),
               );
               break;
             case 3:
-              // Handle navigation to Add Post (if needed)
+              // Handle navigation to Add Post
+              _showAddPostOptions(context);
               break;
             case 4:
-              // Handle navigation to ProfileHomeScreen
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (context) => ProfileHome()),
-              );
+              // Do nothing, already on the profile screen
               break;
           }
         },
@@ -246,5 +187,90 @@ class _ProfileHomeState extends State<ProfileHome> {
         ],
       ),
     );
+  }
+
+  Column _buildStatColumn(String label, String count) {
+    return Column(
+      children: [
+        Text(
+          count,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 4),
+        Text(label),
+      ],
+    );
+  }
+
+  Widget _buildPostGrid() {
+    return Padding(
+      padding: const EdgeInsets.all(2.0),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 2.0,
+          mainAxisSpacing: 2.0,
+        ),
+        itemCount: 30,
+        itemBuilder: (BuildContext context, int index) {
+          return Image.network(
+            'https://via.placeholder.com/150',
+            fit: BoxFit.cover,
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAddPostOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Choose Files'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: Icon(Icons.add_a_photo),
+                title: Text('Camera'),
+                onTap: () {
+                  _openCamera(context);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.insert_drive_file),
+                title: Text('Local Storage'),
+                onTap: () {
+                  _openLocalStorage(context);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Function to open the camera
+  void _openCamera(BuildContext context) async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.camera);
+    if (pickedImage != null) {
+      // Handle the picked image
+    }
+  }
+
+  // Function to open the device's local storage
+  void _openLocalStorage(BuildContext context) async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      // Handle the picked image
+    }
   }
 }
