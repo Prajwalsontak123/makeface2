@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../screens/profile_anime.dart';
 
 class EditProfileScreen extends StatefulWidget {
@@ -21,9 +24,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.check),
-            onPressed: () {
-              _saveProfileChanges();
-            },
+            onPressed: _saveProfileChanges,
           ),
         ],
       ),
@@ -37,14 +38,16 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 onTap: _selectProfileImage,
                 child: CircleAvatar(
                   radius: 50,
-                  backgroundImage: AssetImage(_profileImagePath),
+                  backgroundImage: _profileImagePath.contains('assets')
+                      ? AssetImage(_profileImagePath)
+                      : FileImage(File(_profileImagePath)) as ImageProvider,
                 ),
               ),
             ),
             SizedBox(height: 20.0),
             Center(
               child: TextButton(
-                onPressed: _showImagePickerDialog,
+                onPressed: _selectProfileImage,
                 child: Text('Change Profile Picture'),
               ),
             ),
@@ -152,17 +155,17 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ListTile(
                   leading: Icon(Icons.photo_library),
                   title: Text('Pick from gallery'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _pickImage(ImageSource.gallery);
+                  onTap: () async {
+                    final pickedImage = await _pickImage(ImageSource.gallery);
+                    Navigator.of(context).pop(pickedImage);
                   },
                 ),
                 ListTile(
                   leading: Icon(Icons.photo_camera),
                   title: Text('Take a photo'),
-                  onTap: () {
-                    Navigator.of(context).pop();
-                    _pickImage(ImageSource.camera);
+                  onTap: () async {
+                    final pickedImage = await _pickImage(ImageSource.camera);
+                    Navigator.of(context).pop(pickedImage);
                   },
                 ),
               ],
@@ -173,13 +176,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     );
   }
 
-  Future<void> _pickImage(ImageSource source) async {
-    final pickedImage = await ImagePicker().pickImage(source: source);
-    if (pickedImage != null) {
-      setState(() {
-        _profileImagePath = pickedImage.path;
-      });
-    }
+  Future<XFile?> _pickImage(ImageSource source) async {
+    return await ImagePicker().pickImage(source: source);
   }
 
   @override

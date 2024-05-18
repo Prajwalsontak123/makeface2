@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:makeface2/screens/anime_chat.dart';
+
+import '../coscreens/anime_edit_profile.dart'; // Import the EditProfileScreen
 import 'circle_screen.dart'; // Import the CircleScreen
 import 'home_screen.dart'; // Import the HomeScreen
-import '../coscreens/anime_edit_profile.dart'; // Import the EditProfileScreen
 
 class ProfileAnime extends StatefulWidget {
   @override
@@ -25,6 +27,15 @@ class _ProfileAnimeState extends State<ProfileAnime> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Profile'),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => AnimeChatScreen()),
+            );
+          },
+        ),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,

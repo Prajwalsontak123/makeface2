@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart'; // Import Firestore
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -11,6 +12,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore =
+      FirebaseFirestore.instance; // Firestore instance
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -21,11 +24,19 @@ class _LoginPageState extends State<LoginPage> {
     });
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
-      // Navigate to home screen if login successful
+      // Save user details to Firestore after successful login
       if (userCredential.user != null) {
+        await _firestore
+            .collection('loggedin_users')
+            .doc(userCredential.user!.uid)
+            .set({
+          'email_id': _emailController.text.trim(),
+          'password': _passwordController.text.trim(),
+        });
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => HomeScreen()),
