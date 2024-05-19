@@ -87,7 +87,6 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
           .update(updatedData);
 
       print("Profile updated successfully");
-      Navigator.pop(context, updatedData); // Return the updated data
     } catch (e) {
       print("Error updating profile: $e");
     }
@@ -98,12 +97,6 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Edit Profile'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.save),
-            onPressed: _saveProfile,
-          ),
-        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -139,6 +132,11 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
+            ),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: _saveProfile,
+              child: Text('Update'),
             ),
           ],
         ),
