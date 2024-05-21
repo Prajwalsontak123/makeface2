@@ -41,7 +41,8 @@ class _ProfileHomeState extends State<ProfileHome> {
 
         if (userSnapshot.exists) {
           setState(() {
-            _userName = userSnapshot.data()?['username'] ?? ''; // Ensure 'username' is used
+            _userName = userSnapshot.data()?['username'] ??
+                ''; // Ensure 'username' is used
             _fetchedBio = userSnapshot.data()?['bio'] ?? '';
           });
         }

@@ -15,7 +15,8 @@ class ProfileHomeEdit extends StatefulWidget {
 }
 
 class _ProfileHomeEditState extends State<ProfileHomeEdit> {
-  final TextEditingController _user_IDController = TextEditingController(); // Updated controller name
+  final TextEditingController _user_IDController =
+      TextEditingController(); // Updated controller name
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
@@ -36,7 +37,8 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
       Map<String, dynamic> data =
           documentSnapshot.data() as Map<String, dynamic>;
       setState(() {
-        _user_IDController.text = data['user_ID'] ?? ''; // Updated field name here
+        _user_IDController.text =
+            data['user_ID'] ?? ''; // Updated field name here
         _usernameController.text = data['username'] ?? '';
         _bioController.text = data['bio'] ?? '';
       });

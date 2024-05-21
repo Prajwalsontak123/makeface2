@@ -1,4 +1,6 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomeSearchBar extends StatefulWidget {
   @override
@@ -8,13 +10,42 @@ class HomeSearchBar extends StatefulWidget {
 class _HomeSearchBarState extends State<HomeSearchBar> {
   TextEditingController _searchController = TextEditingController();
   List<String> _searchResults = [];
-  List<String> _suggestions = [
-    'apple',
-    'banana',
-    'orange',
-    'grape',
-    'pineapple'
-  ]; // Example suggestions
+  List<String> _searchHistory = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSearchHistory();
+  }
+
+  Future<void> _loadSearchHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _searchHistory = prefs.getStringList('searchHistory') ?? [];
+    });
+  }
+
+  Future<void> _saveSearchHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setStringList('searchHistory', _searchHistory);
+  }
+
+  void _addToSearchHistory(String searchTerm) {
+    if (!_searchHistory.contains(searchTerm)) {
+      setState(() {
+        _searchHistory.insert(0, searchTerm);
+      });
+      _saveSearchHistory();
+    }
+  }
+
+  void _clearSearchHistory() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.remove('searchHistory');
+    setState(() {
+      _searchHistory.clear();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,59 +68,175 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
           onChanged: (value) {
             setState(() {
               _searchResults.clear();
-              // Filter search results based on input value
-              _searchResults = _getSearchResults(value);
+              if (value.isNotEmpty) {
+                _addToSearchHistory(value);
+              }
+              _getSearchResults(value);
             });
           },
         ),
       ),
-      body: _searchResults.isEmpty && _searchController.text.isNotEmpty
-          ? _buildSuggestionsList()
-          : ListView.builder(
-              itemCount: _searchResults.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(_searchResults[index]),
-                  onTap: () {
-                    // Handle tapping on search result
-                    // For example, navigate to a detailed page
-                  },
-                );
-              },
+      body: Column(
+        children: [
+          Expanded(
+            child: _searchResults.isEmpty && _searchController.text.isNotEmpty
+                ? _buildSuggestionsList()
+                : ListView.builder(
+                    itemCount: _searchResults.length,
+                    itemBuilder: (context, index) {
+                      return ListTile(
+                        title: Text(_searchResults[index]),
+                        onTap: () {
+                          // Handle tapping on search result
+                          // For example, navigate to a detailed page
+                        },
+                      );
+                    },
+                  ),
+          ),
+          if (_searchHistory
+              .isNotEmpty) // Only show search history if there are items
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Search History',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.0,
+                    ),
+                  ),
+                  SizedBox(height: 8.0),
+                  ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: _searchHistory.length,
+                    itemBuilder: (context, index) {
+                      return SearchHistoryTile(
+                        searchTerm: _searchHistory[index],
+                        onTap: () {
+                          setState(() {
+                            _searchController.text = _searchHistory[index];
+                            _getSearchResults(_searchHistory[index]);
+                          });
+                        },
+                      );
+                    },
+                  ),
+                ],
+              ),
             ),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: ElevatedButton(
+              onPressed: () {
+                _searchController.clear();
+                setState(() {
+                  _searchResults.clear();
+                });
+                _clearSearchHistory();
+              },
+              child: Text('Clear Search'),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  List<String> _getSearchResults(String query) {
-    // Mocked function to return search results
-    // In a real app, you would fetch data from a server or a local database
-    List<String> results = [];
+  Future<void> _getSearchResults(String query) async {
     if (query.isNotEmpty) {
-      // Here you would fetch results based on the query
-      // For demonstration, I'm just filtering suggestions
-      results = _suggestions
-          .where((suggestion) =>
-              suggestion.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('loggedin_users')
+          .where('username', isGreaterThanOrEqualTo: query.toLowerCase())
+          .where('username', isLessThan: query.toLowerCase() + 'z')
+          .get();
+
+      setState(() {
+        _searchResults = querySnapshot.docs
+            .map((doc) => doc.get('username').toString())
+            .toList();
+      });
     }
-    return results;
   }
 
   Widget _buildSuggestionsList() {
-    return ListView.builder(
-      itemCount: _suggestions.length,
-      itemBuilder: (context, index) {
-        return ListTile(
-          title: Text(_suggestions[index]),
-          onTap: () {
-            _searchController.text = _suggestions[index];
-            setState(() {
-              _searchResults.clear();
-              _searchResults.add(_suggestions[index]);
-            });
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('loggedin_users')
+          .where('username',
+              isGreaterThanOrEqualTo: _searchController.text.toLowerCase())
+          .where('username',
+              isLessThan: _searchController.text.toLowerCase() + 'z')
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        }
+
+        final usernames = snapshot.data!.docs
+            .map((doc) => doc.get('username').toString())
+            .toList();
+
+        return ListView.builder(
+          itemCount: usernames.length,
+          itemBuilder: (context, index) {
+            return CustomListTile(
+              suggestion: usernames[index],
+              onTap: () {
+                _searchController.text = usernames[index];
+                setState(() {
+                  _searchResults.clear();
+                  _searchResults.add(usernames[index]);
+                  _addToSearchHistory(usernames[index]);
+                });
+              },
+            );
           },
         );
       },
+    );
+  }
+}
+
+class CustomListTile extends StatelessWidget {
+  final String suggestion;
+  final VoidCallback onTap;
+
+  const CustomListTile({
+    required this.suggestion,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: CircleAvatar(
+        child: Text(suggestion[0].toUpperCase()),
+      ),
+      title: Text(suggestion),
+      onTap: onTap,
+    );
+  }
+}
+
+class SearchHistoryTile extends StatelessWidget {
+  final String searchTerm;
+  final VoidCallback onTap;
+
+  const SearchHistoryTile({required this.searchTerm, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: CircleAvatar(
+        child: Text(searchTerm[0].toUpperCase()),
+      ),
+      title: Text(searchTerm),
+      onTap: onTap,
     );
   }
 }
