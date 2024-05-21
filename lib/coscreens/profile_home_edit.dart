@@ -6,15 +6,16 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 class ProfileHomeEdit extends StatefulWidget {
-  final String documentId;
+  final String userId;
 
-  ProfileHomeEdit(this.documentId);
+  ProfileHomeEdit(this.userId);
 
   @override
   _ProfileHomeEditState createState() => _ProfileHomeEditState();
 }
 
 class _ProfileHomeEditState extends State<ProfileHomeEdit> {
+  final TextEditingController _user_IDController = TextEditingController(); // Updated controller name
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
@@ -30,13 +31,14 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
     try {
       DocumentSnapshot documentSnapshot = await FirebaseFirestore.instance
           .collection('loggedin_users')
-          .doc(widget.documentId)
+          .doc(widget.userId)
           .get();
       Map<String, dynamic> data =
           documentSnapshot.data() as Map<String, dynamic>;
       setState(() {
-        _usernameController.text = data['username'];
-        _bioController.text = data['bio'];
+        _user_IDController.text = data['user_ID'] ?? ''; // Updated field name here
+        _usernameController.text = data['username'] ?? '';
+        _bioController.text = data['bio'] ?? '';
       });
     } catch (e) {
       print("Error loading profile data: $e");
@@ -73,6 +75,7 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
       }
 
       Map<String, dynamic> updatedData = {
+        'user_ID': _user_IDController.text, // Updated field name here
         'username': _usernameController.text,
         'bio': _bioController.text,
       };
@@ -83,10 +86,11 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
 
       await FirebaseFirestore.instance
           .collection('loggedin_users')
-          .doc(widget.documentId)
+          .doc(widget.userId)
           .update(updatedData);
 
       print("Profile updated successfully");
+      Navigator.pop(context, updatedData);
     } catch (e) {
       print("Error updating profile: $e");
     }
@@ -97,23 +101,22 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Edit Profile'),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.save),
+            onPressed: _saveProfile,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
-            Center(
-              child: GestureDetector(
-                onTap: _pickImage,
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundImage: _profileImage != null
-                      ? FileImage(File(_profileImage!.path))
-                      : null,
-                  child: _profileImage == null
-                      ? Icon(Icons.camera_alt, size: 50)
-                      : null,
-                ),
+            TextField(
+              controller: _user_IDController, // Updated controller name here
+              decoration: InputDecoration(
+                labelText: 'User ID',
+                border: OutlineInputBorder(),
               ),
             ),
             SizedBox(height: 20),
@@ -132,11 +135,6 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
                 border: OutlineInputBorder(),
               ),
               maxLines: 3,
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _saveProfile,
-              child: Text('Update'),
             ),
           ],
         ),

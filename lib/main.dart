@@ -1,8 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-
-import './screens/login_screen.dart'; // Import the LoginPage from login_screen.dart
-import 'firebase_options.dart'; // Import your firebase_options.dart file
+import './screens/login_screen.dart'; // Ensure the path to LoginPage is correct
+import 'firebase_options.dart'; // Ensure the firebase_options.dart file is generated
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

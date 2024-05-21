@@ -1,11 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../coscreens/profile_home_edit.dart';
-import 'anime_chat.dart'; // Import your AnimeChat.dart file here
-import 'circle_screen.dart'; // Import your CircleScreen.dart file here
-import 'home_screen.dart'; // Import your HomeScreen.dart file here
+import 'anime_chat.dart';
+import 'circle_screen.dart';
+import 'home_screen.dart';
 
 class ProfileHome extends StatefulWidget {
   @override
@@ -15,8 +16,7 @@ class ProfileHome extends StatefulWidget {
 class _ProfileHomeState extends State<ProfileHome> {
   late String _userName = '';
   late String _userId;
-  late String _userBio = '';
-  late String _profilePicUrl = '';
+  late String _fetchedBio = '';
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -32,26 +32,30 @@ class _ProfileHomeState extends State<ProfileHome> {
       if (user != null) {
         _userId = user.uid;
 
-        DocumentSnapshot<Map<String, dynamic>> snapshot =
+        // Fetch user data from loggedin_users collection based on user ID
+        DocumentSnapshot<Map<String, dynamic>> userSnapshot =
             await FirebaseFirestore.instance
-                .collection('users')
-                .doc(_userId)
+                .collection('loggedin_users')
+                .doc(user.uid)
                 .get();
 
-        if (snapshot.exists) {
+        if (userSnapshot.exists) {
           setState(() {
-            _userName = snapshot.data()?['username'] ?? '';
-            _userBio = snapshot.data()?['bio'] ?? '';
-            _profilePicUrl = snapshot.data()?['profile_image'] ??
-                'https://via.placeholder.com/150';
-            _isLoading = false;
-          });
-        } else {
-          setState(() {
-            _errorMessage = 'User data not found.';
-            _isLoading = false;
+            _userName = userSnapshot.data()?['username'] ?? ''; // Ensure 'username' is used
+            _fetchedBio = userSnapshot.data()?['bio'] ?? '';
           });
         }
+
+        // Set loading state to false
+        setState(() {
+          _isLoading = false;
+        });
+      } else {
+        // Handle case where user is null
+        setState(() {
+          _errorMessage = 'User not logged in.';
+          _isLoading = false;
+        });
       }
     } catch (e) {
       setState(() {
@@ -65,25 +69,25 @@ class _ProfileHomeState extends State<ProfileHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_userName),
+        title: Text(_userName), // Display username in app bar title
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+            );
+          },
+        ),
         actions: [
           IconButton(
             icon: Icon(Icons.edit),
-            onPressed: () async {
-              var updatedData = await Navigator.push(
+            onPressed: () {
+              Navigator.push(
                 context,
                 MaterialPageRoute(
                     builder: (context) => ProfileHomeEdit(_userId)),
               );
-              if (updatedData != null) {
-                setState(() {
-                  _userName = updatedData['username'];
-                  _userBio = updatedData['bio'];
-                  if (updatedData['profile_image'] != null) {
-                    _profilePicUrl = updatedData['profile_image'];
-                  }
-                });
-              }
             },
           ),
         ],
@@ -97,54 +101,63 @@ class _ProfileHomeState extends State<ProfileHome> {
                     children: [
                       Padding(
                         padding: const EdgeInsets.all(16.0),
-                        child: Column(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            CircleAvatar(
-                              radius: 50.0,
-                              backgroundImage: NetworkImage(_profilePicUrl),
+                            Column(
+                              children: [
+                                CircleAvatar(
+                                  radius: 50.0,
+                                  backgroundImage:
+                                      AssetImage('assets/images/avatar.png'),
+                                ),
+                                SizedBox(height: 10.0),
+                                ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) =>
+                                              ProfileHomeEdit(_userId)),
+                                    );
+                                  },
+                                  child: Text('Edit Profile'),
+                                ),
+                              ],
                             ),
-                            SizedBox(height: 10.0),
-                            ElevatedButton(
-                              onPressed: () async {
-                                var updatedData = await Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                      builder: (context) =>
-                                          ProfileHomeEdit(_userId)),
-                                );
-                                if (updatedData != null) {
-                                  setState(() {
-                                    _userName = updatedData['username'];
-                                    _userBio = updatedData['bio'];
-                                    if (updatedData['profile_image'] != null) {
-                                      _profilePicUrl =
-                                          updatedData['profile_image'];
-                                    }
-                                  });
-                                }
-                              },
-                              child: Text('Edit Profile'),
+                            SizedBox(width: 16.0),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _buildStatColumn("Posts", "20"),
+                                      _buildStatColumn("Followers", "2.3m"),
+                                      _buildStatColumn("Following", "2.0k"),
+                                    ],
+                                  ),
+                                  SizedBox(height: 10.0),
+                                  _buildBioSection(),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      SizedBox(height: 20),
-                      Text(
-                        _userName,
-                        style: TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 20),
-                      ),
-                      SizedBox(height: 10),
-                      Text(
-                        _userBio,
-                        style: TextStyle(fontSize: 16),
-                      ),
-                      // Add other profile details as needed
+                      Divider(),
+                      _buildPostGrid(),
                     ],
                   ),
                 ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 4, // Set the current index to 4 (Profile)
+        showSelectedLabels: false,
+        showUnselectedLabels: false,
+        selectedIconTheme: IconThemeData(color: Colors.black),
+        unselectedIconTheme: IconThemeData(color: Colors.black),
+        currentIndex: 4,
         onTap: (int index) {
           switch (index) {
             case 0:
@@ -166,11 +179,9 @@ class _ProfileHomeState extends State<ProfileHome> {
               );
               break;
             case 3:
-              // Handle navigation to Add Post
-              // For example: Navigator.push(context, MaterialPageRoute(builder: (context) => AddPostScreen()));
+              _showAddPostOptions(context);
               break;
             case 4:
-              // Do nothing, already on the profile screen
               break;
           }
         },
@@ -198,5 +209,116 @@ class _ProfileHomeState extends State<ProfileHome> {
         ],
       ),
     );
+  }
+
+  Column _buildStatColumn(String label, String count) {
+    return Column(
+      children: [
+        Text(
+          count,
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+        ),
+        SizedBox(height: 4),
+        Text(label),
+      ],
+    );
+  }
+
+  Widget _buildBioSection() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _userName, // Display username in bio section
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8.0),
+          Text(
+            _fetchedBio,
+            style: TextStyle(fontSize: 16),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPostGrid() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(2.0),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 2.0,
+              mainAxisSpacing: 2.0,
+            ),
+            itemCount: 30,
+            itemBuilder: (BuildContext context, int index) {
+              return Image.network(
+                'https://via.placeholder.com/150',
+                fit: BoxFit.cover,
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showAddPostOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Choose Files'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: Icon(Icons.add_a_photo),
+                title: Text('Camera'),
+                onTap: () {
+                  _openCamera(context);
+                  Navigator.pop(context); // Close the dialog
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.insert_drive_file),
+                title: Text('Local Storage'),
+                onTap: () {
+                  _openLocalStorage(context);
+                  Navigator.pop(context); // Close the dialog
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _openCamera(BuildContext context) async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.camera);
+    if (pickedImage != null) {
+      // Handle the picked image
+    }
+  }
+
+  void _openLocalStorage(BuildContext context) async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      // Handle the picked image
+    }
   }
 }
