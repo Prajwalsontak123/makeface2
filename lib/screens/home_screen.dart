@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart'; // Import the image_picker package
 
+import '../coscreens/home_searchbar.dart'; // Import the HomeSearchBar screen
 import 'anime_chat.dart'; // Import the AnimeChatScreen
 import 'circle_screen.dart'; // Import the CircleScreen
 import 'home_chat.dart'; // Import the HomeChatScreen
@@ -22,7 +23,11 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.search),
             onPressed: () {
-              // Add onPressed functionality for search
+              // Navigate to HomeSearchBar when search icon is tapped
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => HomeSearchBar()),
+              );
             },
           ),
           IconButton(
