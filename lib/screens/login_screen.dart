@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+
 import 'home_screen.dart';
 import 'login_create_account.dart'; // Assuming this is the file where users create accounts
 
@@ -58,7 +59,8 @@ class _LoginPageState extends State<LoginPage> {
 
         if (userDoc.docs.isNotEmpty) {
           await userDoc.docs.first.reference.update({
-            'last_login_at': FieldValue.serverTimestamp(), // Update last login timestamp
+            'last_login_at':
+                FieldValue.serverTimestamp(), // Update last login timestamp
           });
 
           Navigator.pushReplacement(
@@ -132,7 +134,8 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     SizedBox(height: 20),
                     ElevatedButton(
-                      onPressed: _isLoading ? null : _signInWithEmailAndPassword,
+                      onPressed:
+                          _isLoading ? null : _signInWithEmailAndPassword,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         shape: RoundedRectangleBorder(

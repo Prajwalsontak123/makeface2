@@ -10,40 +10,67 @@ class HomeSearchBar extends StatefulWidget {
 class _HomeSearchBarState extends State<HomeSearchBar> {
   TextEditingController _searchController = TextEditingController();
   List<String> _searchResults = [];
-  List<String> _searchHistory = [];
+  List<String> _recentSearches = [];
 
   @override
   void initState() {
     super.initState();
-    _loadSearchHistory();
+    _loadRecentSearches();
   }
 
-  Future<void> _loadSearchHistory() async {
+  Future<void> _loadRecentSearches() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _searchHistory = prefs.getStringList('searchHistory') ?? [];
+      _recentSearches = prefs.getStringList('recentSearches') ?? [];
     });
   }
 
-  Future<void> _saveSearchHistory() async {
+  Future<void> _saveRecentSearch(String searchTerm) async {
     final prefs = await SharedPreferences.getInstance();
-    prefs.setStringList('searchHistory', _searchHistory);
+    if (_recentSearches.contains(searchTerm)) {
+      _recentSearches.remove(searchTerm);
+    }
+    _recentSearches.insert(0, searchTerm);
+    if (_recentSearches.length > 10) {
+      _recentSearches =
+          _recentSearches.sublist(0, 10); // Limit to 10 recent searches
+    }
+    await prefs.setStringList('recentSearches', _recentSearches);
   }
 
-  void _addToSearchHistory(String searchTerm) {
-    if (!_searchHistory.contains(searchTerm)) {
-      setState(() {
-        _searchHistory.insert(0, searchTerm);
-      });
-      _saveSearchHistory();
+  void _clearRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('recentSearches');
+    setState(() {
+      _recentSearches.clear();
+    });
+  }
+
+  Future<void> _deleteRecentSearch(String searchTerm) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _recentSearches.remove(searchTerm);
+    });
+    await prefs.setStringList('recentSearches', _recentSearches);
+  }
+
+  void _performSearch(String query) {
+    if (query.isNotEmpty) {
+      _getSearchResults(query);
     }
   }
 
-  void _clearSearchHistory() async {
-    final prefs = await SharedPreferences.getInstance();
-    prefs.remove('searchHistory');
+  Future<void> _getSearchResults(String query) async {
+    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+        .collection('loggedin_users')
+        .where('username', isGreaterThanOrEqualTo: query.toLowerCase())
+        .where('username', isLessThan: query.toLowerCase() + 'z')
+        .get();
+
     setState(() {
-      _searchHistory.clear();
+      _searchResults = querySnapshot.docs
+          .map((doc) => doc.get('username').toString())
+          .toList();
     });
   }
 
@@ -69,96 +96,106 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
             setState(() {
               _searchResults.clear();
               if (value.isNotEmpty) {
-                _addToSearchHistory(value);
+                _performSearch(value);
               }
-              _getSearchResults(value);
             });
+          },
+          onTap: () {
+            setState(() {});
           },
         ),
       ),
       body: Column(
         children: [
-          Expanded(
-            child: _searchResults.isEmpty && _searchController.text.isNotEmpty
-                ? _buildSuggestionsList()
-                : ListView.builder(
-                    itemCount: _searchResults.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text(_searchResults[index]),
-                        onTap: () {
-                          // Handle tapping on search result
-                          // For example, navigate to a detailed page
-                        },
-                      );
-                    },
-                  ),
-          ),
-          if (_searchHistory
-              .isNotEmpty) // Only show search history if there are items
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Search History',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16.0,
+          if (_searchController.text.isEmpty)
+            _buildRecentSearchesList()
+          else
+            Expanded(
+              child: _searchResults.isEmpty
+                  ? _buildSuggestionsList()
+                  : ListView.builder(
+                      itemCount: _searchResults.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text(_searchResults[index]),
+                          onTap: () {
+                            _searchController.text = _searchResults[index];
+                            _saveRecentSearch(_searchResults[index]);
+                            setState(() {
+                              _searchResults.clear();
+                              _searchResults.add(_searchResults[index]);
+                            });
+                          },
+                        );
+                      },
                     ),
-                  ),
-                  SizedBox(height: 8.0),
-                  ListView.builder(
-                    shrinkWrap: true,
-                    itemCount: _searchHistory.length,
-                    itemBuilder: (context, index) {
-                      return SearchHistoryTile(
-                        searchTerm: _searchHistory[index],
-                        onTap: () {
-                          setState(() {
-                            _searchController.text = _searchHistory[index];
-                            _getSearchResults(_searchHistory[index]);
-                          });
-                        },
-                      );
-                    },
-                  ),
-                ],
-              ),
             ),
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: ElevatedButton(
-              onPressed: () {
-                _searchController.clear();
-                setState(() {
-                  _searchResults.clear();
-                });
-                _clearSearchHistory();
-              },
-              child: Text('Clear Search'),
-            ),
-          ),
         ],
       ),
     );
   }
 
-  Future<void> _getSearchResults(String query) async {
-    if (query.isNotEmpty) {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('loggedin_users')
-          .where('username', isGreaterThanOrEqualTo: query.toLowerCase())
-          .where('username', isLessThan: query.toLowerCase() + 'z')
-          .get();
-
-      setState(() {
-        _searchResults = querySnapshot.docs
-            .map((doc) => doc.get('username').toString())
-            .toList();
-      });
-    }
+  Widget _buildRecentSearchesList() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Recent Searches',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16.0,
+                ),
+              ),
+              TextButton(
+                onPressed: _clearRecentSearches,
+                child: Text('Clear All'),
+              ),
+            ],
+          ),
+        ),
+        ListView.builder(
+          shrinkWrap: true,
+          itemCount: _recentSearches.length,
+          itemBuilder: (context, index) {
+            final item = _recentSearches[index];
+            return Dismissible(
+              key: Key(item),
+              onDismissed: (direction) {
+                _deleteRecentSearch(item);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('$item dismissed')),
+                );
+              },
+              background: Container(color: Colors.red),
+              child: ListTile(
+                title: Text(item),
+                trailing: IconButton(
+                  icon: Icon(Icons.clear),
+                  onPressed: () {
+                    _deleteRecentSearch(item);
+                  },
+                ),
+                onTap: () {
+                  _searchController.text = item;
+                  _getSearchResults(item);
+                  // Save recent search only when a suggestion is tapped
+                  _saveRecentSearch(item);
+                  // Clear the search results list
+                  setState(() {
+                    _searchResults.clear();
+                  });
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
   }
 
   Widget _buildSuggestionsList() {
@@ -191,8 +228,9 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                 setState(() {
                   _searchResults.clear();
                   _searchResults.add(usernames[index]);
-                  _addToSearchHistory(usernames[index]);
                 });
+                // Save recent search only when a suggestion is tapped
+                _saveRecentSearch(usernames[index]); // Moved here
               },
             );
           },
@@ -218,24 +256,6 @@ class CustomListTile extends StatelessWidget {
         child: Text(suggestion[0].toUpperCase()),
       ),
       title: Text(suggestion),
-      onTap: onTap,
-    );
-  }
-}
-
-class SearchHistoryTile extends StatelessWidget {
-  final String searchTerm;
-  final VoidCallback onTap;
-
-  const SearchHistoryTile({required this.searchTerm, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return ListTile(
-      leading: CircleAvatar(
-        child: Text(searchTerm[0].toUpperCase()),
-      ),
-      title: Text(searchTerm),
       onTap: onTap,
     );
   }

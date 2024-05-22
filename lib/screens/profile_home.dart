@@ -17,6 +17,7 @@ class _ProfileHomeState extends State<ProfileHome> {
   late String _userName = '';
   late String _userId;
   late String _fetchedBio = '';
+  String _profileImageUrl = '';
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -41,9 +42,9 @@ class _ProfileHomeState extends State<ProfileHome> {
 
         if (userSnapshot.exists) {
           setState(() {
-            _userName = userSnapshot.data()?['username'] ??
-                ''; // Ensure 'username' is used
+            _userName = userSnapshot.data()?['username'] ?? '';
             _fetchedBio = userSnapshot.data()?['bio'] ?? '';
+            _profileImageUrl = userSnapshot.data()?['profile_image'] ?? '';
           });
         }
 
@@ -66,6 +67,21 @@ class _ProfileHomeState extends State<ProfileHome> {
     }
   }
 
+  void _navigateToEditProfile() async {
+    final updatedData = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => ProfileHomeEdit(_userId)),
+    );
+
+    if (updatedData != null) {
+      setState(() {
+        _userName = updatedData['username'] ?? _userName;
+        _fetchedBio = updatedData['bio'] ?? _fetchedBio;
+        _profileImageUrl = updatedData['profile_image'] ?? _profileImageUrl;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,13 +99,7 @@ class _ProfileHomeState extends State<ProfileHome> {
         actions: [
           IconButton(
             icon: Icon(Icons.edit),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (context) => ProfileHomeEdit(_userId)),
-              );
-            },
+            onPressed: _navigateToEditProfile,
           ),
         ],
       ),
@@ -109,19 +119,14 @@ class _ProfileHomeState extends State<ProfileHome> {
                               children: [
                                 CircleAvatar(
                                   radius: 50.0,
-                                  backgroundImage:
-                                      AssetImage('assets/images/avatar.png'),
+                                  backgroundImage: _profileImageUrl.isNotEmpty
+                                      ? NetworkImage(_profileImageUrl)
+                                      : AssetImage('assets/images/avatar.png')
+                                          as ImageProvider,
                                 ),
                                 SizedBox(height: 10.0),
                                 ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              ProfileHomeEdit(_userId)),
-                                    );
-                                  },
+                                  onPressed: _navigateToEditProfile,
                                   child: Text('Edit Profile'),
                                 ),
                               ],
@@ -311,7 +316,7 @@ class _ProfileHomeState extends State<ProfileHome> {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
-      // Handle the picked image
+// Handle the picked image
     }
   }
 
@@ -319,7 +324,7 @@ class _ProfileHomeState extends State<ProfileHome> {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
-      // Handle the picked image
+// Handle the picked image
     }
   }
 }

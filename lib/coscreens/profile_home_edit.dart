@@ -15,12 +15,12 @@ class ProfileHomeEdit extends StatefulWidget {
 }
 
 class _ProfileHomeEditState extends State<ProfileHomeEdit> {
-  final TextEditingController _user_IDController =
-      TextEditingController(); // Updated controller name
+  final TextEditingController _user_IDController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
   XFile? _profileImage;
+  String? _profileImageUrl;
 
   @override
   void initState() {
@@ -37,10 +37,10 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
       Map<String, dynamic> data =
           documentSnapshot.data() as Map<String, dynamic>;
       setState(() {
-        _user_IDController.text =
-            data['user_ID'] ?? ''; // Updated field name here
+        _user_IDController.text = data['user_ID'] ?? '';
         _usernameController.text = data['username'] ?? '';
         _bioController.text = data['bio'] ?? '';
+        _profileImageUrl = data['profile_image'];
       });
     } catch (e) {
       print("Error loading profile data: $e");
@@ -77,7 +77,7 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
       }
 
       Map<String, dynamic> updatedData = {
-        'user_ID': _user_IDController.text, // Updated field name here
+        'user_ID': _user_IDController.text,
         'username': _usernameController.text,
         'bio': _bioController.text,
       };
@@ -114,8 +114,39 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
         padding: const EdgeInsets.all(16.0),
         child: ListView(
           children: [
+            Center(
+              child: Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 50,
+                    backgroundImage: _profileImage != null
+                        ? FileImage(File(_profileImage!.path))
+                        : _profileImageUrl != null
+                            ? NetworkImage(_profileImageUrl!)
+                            : AssetImage('assets/default_profile_image.png')
+                                as ImageProvider,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: CircleAvatar(
+                        radius: 12,
+                        backgroundColor: Colors.blue,
+                        child: Icon(
+                          Icons.upload,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: 20),
             TextField(
-              controller: _user_IDController, // Updated controller name here
+              controller: _user_IDController,
               decoration: InputDecoration(
                 labelText: 'User ID',
                 border: OutlineInputBorder(),
