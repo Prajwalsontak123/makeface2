@@ -9,7 +9,7 @@ class HomeSearchBar extends StatefulWidget {
 
 class _HomeSearchBarState extends State<HomeSearchBar> {
   TextEditingController _searchController = TextEditingController();
-  List<String> _searchResults = [];
+  List<Map<String, dynamic>> _searchResults = [];
   List<String> _recentSearches = [];
 
   @override
@@ -64,13 +64,17 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance
         .collection('loggedin_users')
         .where('username', isGreaterThanOrEqualTo: query.toLowerCase())
-        .where('username', isLessThan: query.toLowerCase() + 'z')
+        .where('username', isLessThanOrEqualTo: query.toLowerCase() + '\uf8ff')
         .get();
 
     setState(() {
-      _searchResults = querySnapshot.docs
-          .map((doc) => doc.get('username').toString())
-          .toList();
+      _searchResults = querySnapshot.docs.map((doc) {
+        return {
+          'username': doc.get('username').toString(),
+          'profile_image':
+              doc.get('profile_image') ?? 'https://via.placeholder.com/150',
+        };
+      }).toList();
     });
   }
 
@@ -93,22 +97,20 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
             ),
           ),
           onChanged: (value) {
-            setState(() {
-              _searchResults.clear();
-              if (value.isNotEmpty) {
-                _performSearch(value);
-              }
-            });
-          },
-          onTap: () {
-            setState(() {});
+            if (value.isNotEmpty) {
+              _performSearch(value);
+            } else {
+              setState(() {
+                _searchResults.clear();
+              });
+            }
           },
         ),
       ),
       body: Column(
         children: [
           if (_searchController.text.isEmpty)
-            _buildRecentSearchesList()
+            Expanded(child: _buildRecentSearchesList())
           else
             Expanded(
               child: _searchResults.isEmpty
@@ -117,13 +119,25 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                       itemCount: _searchResults.length,
                       itemBuilder: (context, index) {
                         return ListTile(
-                          title: Text(_searchResults[index]),
+                          title: Text(_searchResults[index]['username']),
+                          leading: CircleAvatar(
+                            backgroundImage: NetworkImage(
+                              _searchResults[index]['profile_image'],
+                            ),
+                            onBackgroundImageError: (_, __) {
+                              setState(() {
+                                _searchResults[index]['profile_image'] =
+                                    'https://via.placeholder.com/150';
+                              });
+                            },
+                          ),
                           onTap: () {
-                            _searchController.text = _searchResults[index];
-                            _saveRecentSearch(_searchResults[index]);
+                            _searchController.text =
+                                _searchResults[index]['username'];
+                            _saveRecentSearch(
+                                _searchResults[index]['username']);
                             setState(() {
-                              _searchResults.clear();
-                              _searchResults.add(_searchResults[index]);
+                              _searchResults = [_searchResults[index]];
                             });
                           },
                         );
@@ -158,41 +172,69 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
             ],
           ),
         ),
-        ListView.builder(
-          shrinkWrap: true,
-          itemCount: _recentSearches.length,
-          itemBuilder: (context, index) {
-            final item = _recentSearches[index];
-            return Dismissible(
-              key: Key(item),
-              onDismissed: (direction) {
-                _deleteRecentSearch(item);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('$item dismissed')),
-                );
-              },
-              background: Container(color: Colors.red),
-              child: ListTile(
-                title: Text(item),
-                trailing: IconButton(
-                  icon: Icon(Icons.clear),
-                  onPressed: () {
-                    _deleteRecentSearch(item);
+        Expanded(
+          child: ListView.builder(
+            itemCount: _recentSearches.length,
+            itemBuilder: (context, index) {
+              final item = _recentSearches[index];
+              return Dismissible(
+                key: Key(item),
+                onDismissed: (direction) {
+                  _deleteRecentSearch(item);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('$item dismissed')),
+                  );
+                },
+                background: Container(color: Colors.red),
+                child: ListTile(
+                  title: Text(item),
+                  leading: SizedBox(
+                    width: 40,
+                    height: 40,
+                    child: FutureBuilder<QuerySnapshot>(
+                      future: FirebaseFirestore.instance
+                          .collection('loggedin_users')
+                          .where('username', isEqualTo: item)
+                          .get(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return CircleAvatar(
+                            backgroundImage:
+                                NetworkImage('https://via.placeholder.com/150'),
+                          );
+                        }
+
+                        final doc = snapshot.data!.docs.first;
+                        final profileImage = doc.get('profile_image') ??
+                            'https://via.placeholder.com/150';
+
+                        return CircleAvatar(
+                          backgroundImage: NetworkImage(profileImage),
+                          onBackgroundImageError: (_, __) {
+                            // Handle error here
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  trailing: IconButton(
+                    icon: Icon(Icons.clear),
+                    onPressed: () {
+                      _deleteRecentSearch(item);
+                    },
+                  ),
+                  onTap: () {
+                    _searchController.text = item;
+                    _getSearchResults(item);
+                    _saveRecentSearch(item);
+                    setState(() {
+                      _searchResults.clear();
+                    });
                   },
                 ),
-                onTap: () {
-                  _searchController.text = item;
-                  _getSearchResults(item);
-                  // Save recent search only when a suggestion is tapped
-                  _saveRecentSearch(item);
-                  // Clear the search results list
-                  setState(() {
-                    _searchResults.clear();
-                  });
-                },
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ],
     );
@@ -205,7 +247,8 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
           .where('username',
               isGreaterThanOrEqualTo: _searchController.text.toLowerCase())
           .where('username',
-              isLessThan: _searchController.text.toLowerCase() + 'z')
+              isLessThanOrEqualTo:
+                  _searchController.text.toLowerCase() + '\uf8ff')
           .snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
@@ -214,23 +257,26 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
           );
         }
 
-        final usernames = snapshot.data!.docs
-            .map((doc) => doc.get('username').toString())
-            .toList();
+        final users = snapshot.data!.docs.map((doc) {
+          return {
+            'username': doc.get('username').toString(),
+            'profile_image':
+                doc.get('profile_image') ?? 'https://via.placeholder.com/150',
+          };
+        }).toList();
 
         return ListView.builder(
-          itemCount: usernames.length,
+          itemCount: users.length,
           itemBuilder: (context, index) {
             return CustomListTile(
-              suggestion: usernames[index],
+              suggestion: users[index]['username'],
+              profile_image: users[index]['profile_image'],
               onTap: () {
-                _searchController.text = usernames[index];
+                _searchController.text = users[index]['username'];
                 setState(() {
-                  _searchResults.clear();
-                  _searchResults.add(usernames[index]);
+                  _searchResults = [users[index]];
                 });
-                // Save recent search only when a suggestion is tapped
-                _saveRecentSearch(usernames[index]); // Moved here
+                _saveRecentSearch(users[index]['username']);
               },
             );
           },
@@ -242,10 +288,12 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
 
 class CustomListTile extends StatelessWidget {
   final String suggestion;
+  final String profile_image;
   final VoidCallback onTap;
 
   const CustomListTile({
     required this.suggestion,
+    required this.profile_image,
     required this.onTap,
   });
 
@@ -253,7 +301,10 @@ class CustomListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircleAvatar(
-        child: Text(suggestion[0].toUpperCase()),
+        backgroundImage: NetworkImage(profile_image),
+        onBackgroundImageError: (_, __) {
+          // Handle error here
+        },
       ),
       title: Text(suggestion),
       onTap: onTap,
