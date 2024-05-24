@@ -7,6 +7,7 @@ import '../coscreens/profile_home_edit.dart';
 import 'anime_chat.dart';
 import 'circle_screen.dart';
 import 'home_screen.dart';
+import 'settings_page.dart'; // Import the settings page
 
 class ProfileHome extends StatefulWidget {
   @override
@@ -82,6 +83,14 @@ class _ProfileHomeState extends State<ProfileHome> {
     }
   }
 
+  void _navigateToSettingsPage() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+          builder: (context) => SettingsPage()), // Navigate to settings page
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,8 +107,8 @@ class _ProfileHomeState extends State<ProfileHome> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.edit),
-            onPressed: _navigateToEditProfile,
+            icon: Icon(Icons.menu),
+            onPressed: _navigateToSettingsPage, // Navigate to settings page
           ),
         ],
       ),
@@ -272,6 +281,10 @@ class _ProfileHomeState extends State<ProfileHome> {
               return Image.network(
                 'https://via.placeholder.com/150',
                 fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset('assets/images/avatar.png',
+                      fit: BoxFit.cover);
+                },
               );
             },
           ),
@@ -316,7 +329,7 @@ class _ProfileHomeState extends State<ProfileHome> {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
-// Handle the picked image
+      // Handle the picked image
     }
   }
 
@@ -324,7 +337,7 @@ class _ProfileHomeState extends State<ProfileHome> {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
-// Handle the picked image
+      // Handle the picked image
     }
   }
 }
