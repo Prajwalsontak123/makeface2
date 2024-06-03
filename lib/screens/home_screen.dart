@@ -71,8 +71,8 @@ class HomeScreen extends StatelessWidget {
                         ),
                         if (index == 0)
                           Positioned(
-                            bottom: 0,
-                            right: 0,
+                            bottom: 25,
+                            right: 2,
                             child: Container(
                               padding: EdgeInsets.all(2),
                               decoration: BoxDecoration(
@@ -82,7 +82,7 @@ class HomeScreen extends StatelessWidget {
                               child: Icon(
                                 Icons.add,
                                 color: Colors.white,
-                                size: 20,
+                                size: 23,
                               ),
                             ),
                           ),
