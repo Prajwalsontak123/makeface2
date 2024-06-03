@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Import the image_picker package
+import 'package:image_picker/image_picker.dart';
 
 import '../coscreens/home_searchbar.dart'; // Import the HomeSearchBar screen
 import 'anime_chat.dart'; // Import the AnimeChatScreen
@@ -46,6 +46,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            // "Your Story" section
             Container(
               height: 100.0,
               margin: EdgeInsets.symmetric(vertical: 10.0),
@@ -53,40 +54,49 @@ class HomeScreen extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 itemCount: 10, // Replace with actual number of stories
                 itemBuilder: (BuildContext context, int index) {
-                  return Container(
-                    margin: EdgeInsets.symmetric(horizontal: 5.0),
-                    child: Stack(
-                      children: [
-                        CircleAvatar(
-                          radius: 35.0,
-                          backgroundColor: index == 0
-                              ? Colors.blue // Color for the first story
-                              : const Color.fromARGB(255, 173, 175, 177),
-                          child: index == 0
-                              ? SizedBox.shrink()
-                              : Text(
-                                  '${index + 1}',
-                                  style: TextStyle(color: Colors.white),
+                  return GestureDetector(
+                    onTap: () {
+                      if (index == 0) {
+                        _showAddStoryOptions(context); // Show add story options
+                      } else {
+                        // Handle story viewing
+                      }
+                    },
+                    child: Container(
+                      margin: EdgeInsets.symmetric(horizontal: 5.0),
+                      child: Stack(
+                        children: [
+                          CircleAvatar(
+                            radius: 35.0,
+                            backgroundColor: index == 0
+                                ? Colors.blue // Color for "Your Story"
+                                : const Color.fromARGB(255, 173, 175, 177),
+                            child: index == 0
+                                ? SizedBox.shrink()
+                                : Text(
+                                    '${index + 1}',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                          ),
+                          if (index == 0)
+                            Positioned(
+                              bottom: 25,
+                              right: 2,
+                              child: Container(
+                                padding: EdgeInsets.all(2),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue,
+                                  shape: BoxShape.circle,
                                 ),
-                        ),
-                        if (index == 0)
-                          Positioned(
-                            bottom: 25,
-                            right: 2,
-                            child: Container(
-                              padding: EdgeInsets.all(2),
-                              decoration: BoxDecoration(
-                                color: Colors.blue,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.add,
-                                color: Colors.white,
-                                size: 23,
+                                child: Icon(
+                                  Icons.add,
+                                  color: Colors.white,
+                                  size: 23,
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -220,6 +230,56 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
+  void _showAddStoryOptions(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Add to Your Story'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              ListTile(
+                leading: Icon(Icons.add_a_photo),
+                title: Text('Camera'),
+                onTap: () {
+                  _openCamera(context);
+                  Navigator.pop(context);
+                },
+              ),
+              ListTile(
+                leading: Icon(Icons.insert_drive_file),
+                title: Text('Gallery'),
+                onTap: () {
+                  _openGallery(context);
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Function to open the camera for adding a story
+  void _openCamera(BuildContext context) async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.camera);
+    if (pickedImage != null) {
+      // Handle the picked image for story
+    }
+  }
+
+  // Function to open the gallery for adding a story
+  void _openGallery(BuildContext context) async {
+    final picker = ImagePicker();
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      // Handle the picked image for story
+    }
+  }
+
   void _showAddPostOptions(BuildContext context) {
     showDialog(
       context: context,
@@ -233,7 +293,7 @@ class HomeScreen extends StatelessWidget {
                 leading: Icon(Icons.add_a_photo),
                 title: Text('Camera'),
                 onTap: () {
-                  _openCamera(context);
+                  _openCameraForPost(context);
                   Navigator.pop(context);
                 },
               ),
@@ -252,8 +312,8 @@ class HomeScreen extends StatelessWidget {
     );
   }
 
-  // Function to open the camera
-  void _openCamera(BuildContext context) async {
+  // Function to open the camera for adding a post
+  void _openCameraForPost(BuildContext context) async {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
@@ -261,7 +321,7 @@ class HomeScreen extends StatelessWidget {
     }
   }
 
-  // Function to open the device's local storage
+  // Function to open the device's local storage for adding a post
   void _openLocalStorage(BuildContext context) async {
     final picker = ImagePicker();
     final pickedImage = await picker.pickImage(source: ImageSource.gallery);
