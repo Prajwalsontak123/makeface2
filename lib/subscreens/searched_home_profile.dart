@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:string_similarity/string_similarity.dart';
+import 'searched_home_profile.dart'; // Ensure this import path is correct
 
 class HomeSearchBar extends StatefulWidget {
   @override
@@ -10,7 +10,7 @@ class HomeSearchBar extends StatefulWidget {
 
 class _HomeSearchBarState extends State<HomeSearchBar> {
   TextEditingController _searchController = TextEditingController();
-  List<Map<String, String>> _searchResults = [];
+  List<Map<String, dynamic>> _searchResults = [];
   List<String> _recentSearches = [];
 
   @override
@@ -33,8 +33,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
     }
     _recentSearches.insert(0, searchTerm);
     if (_recentSearches.length > 10) {
-      _recentSearches =
-          _recentSearches.sublist(0, 10); // Limit to 10 recent searches
+      _recentSearches = _recentSearches.sublist(0, 10); // Limit to 10 recent searches
     }
     await prefs.setStringList('recentSearches', _recentSearches);
   }
@@ -62,26 +61,44 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
   }
 
   Future<void> _getSearchResults(String query) async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+    QuerySnapshot usernameSnapshot = await FirebaseFirestore.instance
         .collection('loggedin_users')
+        .where('username', isGreaterThanOrEqualTo: query)
+        .where('username', isLessThanOrEqualTo: query + '\uf8ff')
         .get();
 
-    List<Map<String, String>> results = [];
-    for (var doc in querySnapshot.docs) {
-      String username = doc.get('username').toString();
-      String uniqueName = doc.get('unique_name').toString();
-      if (username.toLowerCase().similarityTo(query.toLowerCase()) >= 0.8 ||
-          uniqueName.toLowerCase().similarityTo(query.toLowerCase()) >= 0.8) {
-        results.add({
-          'username': username,
-          'unique_name': uniqueName,
-        });
-      }
-    }
+    QuerySnapshot uniqueNameSnapshot = await FirebaseFirestore.instance
+        .collection('loggedin_users')
+        .where('unique_name', isGreaterThanOrEqualTo: query)
+        .where('unique_name', isLessThanOrEqualTo: query + '\uf8ff')
+        .get();
+
+    List<Map<String, dynamic>> usernames = usernameSnapshot.docs
+        .map((doc) => {
+              'username': (doc.data() as Map<String, dynamic>)['username'],
+              'userId': doc.id,
+            })
+        .toList();
+
+    List<Map<String, dynamic>> uniqueNames = uniqueNameSnapshot.docs
+        .map((doc) => {
+              'unique_name': (doc.data() as Map<String, dynamic>)['unique_name'],
+              'userId': doc.id,
+            })
+        .toList();
 
     setState(() {
-      _searchResults = results;
+      _searchResults = [...usernames, ...uniqueNames];
     });
+  }
+
+  void _navigateToUserProfile(String userId) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => SearchedHomeProfile(userId: userId),
+      ),
+    );
   }
 
   @override
@@ -126,16 +143,17 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                   : ListView.builder(
                       itemCount: _searchResults.length,
                       itemBuilder: (context, index) {
+                        String displayText = _searchResults[index]['username'] ?? _searchResults[index]['unique_name'];
+                        String userId = _searchResults[index]['userId'];
                         return ListTile(
-                          title: Text(_searchResults[index]['username']!),
-                          subtitle: Text(_searchResults[index]['unique_name']!),
+                          title: Text(displayText),
                           onTap: () {
-                            _searchController.text = _searchResults[index]['username']!;
-                            _saveRecentSearch(_searchResults[index]['username']!);
+                            _searchController.text = displayText;
+                            _saveRecentSearch(displayText);
                             setState(() {
                               _searchResults.clear();
-                              _searchResults.add(_searchResults[index]);
                             });
+                            _navigateToUserProfile(userId);
                           },
                         );
                       },
@@ -194,9 +212,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                 onTap: () {
                   _searchController.text = item;
                   _getSearchResults(item);
-                  // Save recent search only when a suggestion is tapped
                   _saveRecentSearch(item);
-                  // Clear the search results list
                   setState(() {
                     _searchResults.clear();
                   });
@@ -221,26 +237,27 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
           );
         }
 
-        final users = snapshot.data!.docs
-            .map((doc) => {
-                  'username': doc.get('username').toString(),
-                  'unique_name': doc.get('unique_name').toString(),
-                })
-            .toList();
+        final users = snapshot.data!.docs.map((doc) {
+          var data = doc.data() as Map<String, dynamic>;
+          String? username = data.containsKey('username') ? data['username'].toString() : null;
+          String? uniqueName = data.containsKey('unique_name') ? data['unique_name'].toString() : null;
+          return {'username': username, 'unique_name': uniqueName, 'userId': doc.id};
+        }).where((user) => user['username'] != null || user['unique_name'] != null).toList();
 
         return ListView.builder(
           itemCount: users.length,
           itemBuilder: (context, index) {
+            String suggestion = users[index]['username'] ?? users[index]['unique_name']!;
             return CustomListTile(
-              suggestion: users[index]['username']!,
+              suggestion: suggestion,
               onTap: () {
-                _searchController.text = users[index]['username']!;
+                _searchController.text = suggestion;
                 setState(() {
                   _searchResults.clear();
                   _searchResults.add(users[index]);
                 });
-                // Save recent search only when a suggestion is tapped
-                _saveRecentSearch(users[index]['username']!);
+                _saveRecentSearch(suggestion);
+                _navigateToUserProfile(users[index]['userId']);
               },
             );
           },
@@ -263,7 +280,9 @@ class CustomListTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListTile(
       leading: CircleAvatar(
-        child: Text(suggestion[0].toUpperCase()),
+        child: suggestion.isNotEmpty
+            ? Text(suggestion[0].toUpperCase())
+            : Icon(Icons.person),
       ),
       title: Text(suggestion),
       onTap: onTap,
