@@ -1,7 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'searched_home_profile.dart'; // Ensure this import path is correct
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class HomeSearchBar extends StatefulWidget {
   @override
@@ -144,7 +143,6 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                       itemCount: _searchResults.length,
                       itemBuilder: (context, index) {
                         String displayText = _searchResults[index]['username'] ?? _searchResults[index]['unique_name'];
-                        String userId = _searchResults[index]['userId'];
                         return ListTile(
                           title: Text(displayText),
                           onTap: () {
@@ -153,7 +151,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                             setState(() {
                               _searchResults.clear();
                             });
-                            _navigateToUserProfile(userId);
+                            _navigateToUserProfile(_searchResults[index]['userId']);
                           },
                         );
                       },
@@ -241,7 +239,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
           var data = doc.data() as Map<String, dynamic>;
           String? username = data.containsKey('username') ? data['username'].toString() : null;
           String? uniqueName = data.containsKey('unique_name') ? data['unique_name'].toString() : null;
-          return {'username': username, 'unique_name': uniqueName, 'userId': doc.id};
+          return {'username': username, 'unique_name': uniqueName};
         }).where((user) => user['username'] != null || user['unique_name'] != null).toList();
 
         return ListView.builder(
@@ -257,7 +255,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                   _searchResults.add(users[index]);
                 });
                 _saveRecentSearch(suggestion);
-                _navigateToUserProfile(users[index]['userId']);
+                _navigateToUserProfile(suggestion);
               },
             );
           },
@@ -289,3 +287,23 @@ class CustomListTile extends StatelessWidget {
     );
   }
 }
+
+class SearchedHomeProfile extends StatelessWidget {
+  final String userId;
+
+  const SearchedHomeProfile({required this.userId});
+
+  @override
+  Widget build(BuildContext context) {
+    // Implement the UI for the user profile page
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('User Profile'),
+      ),
+      body: Center(
+        child: Text('User ID: $userId'),
+      ),
+    );
+  }
+}
+

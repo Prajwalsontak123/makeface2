@@ -15,7 +15,8 @@ class ProfileHome extends StatefulWidget {
 }
 
 class _ProfileHomeState extends State<ProfileHome> {
-  late String _userName = '';
+  late String _uniqueName = '';
+  late String _userName = ''; // Added userName field
   late String _userId;
   late String _fetchedBio = '';
   String _profileImageUrl = '';
@@ -43,7 +44,8 @@ class _ProfileHomeState extends State<ProfileHome> {
 
         if (userSnapshot.exists) {
           setState(() {
-            _userName = userSnapshot.data()?['username'] ?? '';
+            _uniqueName = userSnapshot.data()?['unique_name'] ?? '';
+            _userName = userSnapshot.data()?['username'] ?? ''; // Fetch username
             _fetchedBio = userSnapshot.data()?['bio'] ?? '';
             _profileImageUrl = userSnapshot.data()?['profile_image'] ?? '';
           });
@@ -76,6 +78,7 @@ class _ProfileHomeState extends State<ProfileHome> {
 
     if (updatedData != null) {
       setState(() {
+        _uniqueName = updatedData['unique_name'] ?? _uniqueName;
         _userName = updatedData['username'] ?? _userName;
         _fetchedBio = updatedData['bio'] ?? _fetchedBio;
         _profileImageUrl = updatedData['profile_image'] ?? _profileImageUrl;
@@ -95,7 +98,7 @@ class _ProfileHomeState extends State<ProfileHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_userName), // Display username in app bar title
+        title: Text(_uniqueName), // Display unique_name in app bar title
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -205,6 +208,7 @@ class _ProfileHomeState extends State<ProfileHome> {
             icon: Icon(Icons.home),
             label: 'Home',
           ),
+         
           BottomNavigationBarItem(
             icon: Icon(Icons.add_reaction_outlined),
             label: 'Incognito Mode',
@@ -246,7 +250,7 @@ class _ProfileHomeState extends State<ProfileHome> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            _userName, // Display username in bio section
+            'Username: $_userName', // Display username in bio section
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
