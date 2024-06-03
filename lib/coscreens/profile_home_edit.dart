@@ -15,7 +15,7 @@ class ProfileHomeEdit extends StatefulWidget {
 }
 
 class _ProfileHomeEditState extends State<ProfileHomeEdit> {
-  final TextEditingController _user_IDController = TextEditingController();
+  final TextEditingController _uniqueNameController = TextEditingController();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
@@ -37,7 +37,7 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
       Map<String, dynamic> data =
           documentSnapshot.data() as Map<String, dynamic>;
       setState(() {
-        _user_IDController.text = data['user_ID'] ?? '';
+        _uniqueNameController.text = data['unique_name'] ?? '';
         _usernameController.text = data['username'] ?? '';
         _bioController.text = data['bio'] ?? '';
         _profileImageUrl = data['profile_image'];
@@ -77,7 +77,7 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
       }
 
       Map<String, dynamic> updatedData = {
-        'user_ID': _user_IDController.text,
+        'unique_name': _uniqueNameController.text,
         'username': _usernameController.text,
         'bio': _bioController.text,
       };
@@ -146,9 +146,9 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
             ),
             SizedBox(height: 20),
             TextField(
-              controller: _user_IDController,
+              controller: _uniqueNameController,
               decoration: InputDecoration(
-                labelText: 'User ID',
+                labelText: 'Unique Name',
                 border: OutlineInputBorder(),
               ),
             ),

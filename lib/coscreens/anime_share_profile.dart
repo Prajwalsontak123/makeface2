@@ -60,10 +60,14 @@ class ProfileSharingPage extends StatelessWidget {
 
   void _shareViaWhatsApp(BuildContext context, String text) async {
     String url = 'whatsapp://send?text=$text';
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      _showSnackBar(context, 'Could not launch WhatsApp');
+    try {
+      if (await canLaunch(url)) {
+        await launch(url);
+      } else {
+        throw 'Could not launch WhatsApp';
+      }
+    } catch (e) {
+      _showSnackBar(context, 'Error: $e');
     }
   }
 
@@ -72,10 +76,14 @@ class ProfileSharingPage extends StatelessWidget {
     String subject = 'Check out my profile!';
     String body = 'Here is the link to my profile: $text';
     String url = 'mailto:$emailAddress?subject=$subject&body=$body';
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      _showSnackBar(context, 'Could not launch email');
+    try {
+      if (await canLaunch(url)) {
+        await launch(url);
+      } else {
+        throw 'Could not launch email';
+      }
+    } catch (e) {
+      _showSnackBar(context, 'Error: $e');
     }
   }
 }
