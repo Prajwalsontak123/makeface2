@@ -1,6 +1,9 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:makeface2/screens/otheruser_profile_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Import the file from the 'coscreens' folder
 
 class HomeSearchBar extends StatefulWidget {
   @override
@@ -73,6 +76,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
           'username': doc.get('username').toString(),
           'profile_image':
               doc.get('profile_image') ?? 'https://via.placeholder.com/150',
+          'bio': doc.get('bio') ?? '', // Assuming you have a bio field
         };
       }).toList();
     });
@@ -136,9 +140,17 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                                 _searchResults[index]['username'];
                             _saveRecentSearch(
                                 _searchResults[index]['username']);
-                            setState(() {
-                              _searchResults = [_searchResults[index]];
-                            });
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => OtherUserProfileScreen(
+                                  username: _searchResults[index]['username'],
+                                  profileImage: _searchResults[index]
+                                      ['profile_image'],
+                                  bio: _searchResults[index]['bio'],
+                                ),
+                              ),
+                            );
                           },
                         );
                       },
@@ -262,6 +274,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
             'username': doc.get('username').toString(),
             'profile_image':
                 doc.get('profile_image') ?? 'https://via.placeholder.com/150',
+            'bio': doc.get('bio') ?? '', // Assuming you have a bio field
           };
         }).toList();
 
@@ -271,12 +284,23 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
             return CustomListTile(
               suggestion: users[index]['username'],
               profile_image: users[index]['profile_image'],
+              bio: users[index]['bio'], // Pass the bio field
               onTap: () {
                 _searchController.text = users[index]['username'];
                 setState(() {
                   _searchResults = [users[index]];
                 });
                 _saveRecentSearch(users[index]['username']);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => OtherUserProfileScreen(
+                      username: users[index]['username'],
+                      profileImage: users[index]['profile_image'],
+                      bio: users[index]['bio'],
+                    ),
+                  ),
+                );
               },
             );
           },
@@ -289,11 +313,13 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
 class CustomListTile extends StatelessWidget {
   final String suggestion;
   final String profile_image;
+  final String bio; // Added bio field
   final VoidCallback onTap;
 
   const CustomListTile({
     required this.suggestion,
     required this.profile_image,
+    required this.bio, // Added bio field
     required this.onTap,
   });
 
@@ -307,6 +333,7 @@ class CustomListTile extends StatelessWidget {
         },
       ),
       title: Text(suggestion),
+      subtitle: Text(bio), // Display the bio field
       onTap: onTap,
     );
   }
