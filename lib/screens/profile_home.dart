@@ -45,7 +45,8 @@ class _ProfileHomeState extends State<ProfileHome> {
         if (userSnapshot.exists) {
           setState(() {
             _uniqueName = userSnapshot.data()?['unique_name'] ?? '';
-            _userName = userSnapshot.data()?['username'] ?? ''; // Fetch username
+            _userName =
+                userSnapshot.data()?['username'] ?? ''; // Fetch username
             _fetchedBio = userSnapshot.data()?['bio'] ?? '';
             _profileImageUrl = userSnapshot.data()?['profile_image'] ?? '';
           });
@@ -208,7 +209,6 @@ class _ProfileHomeState extends State<ProfileHome> {
             icon: Icon(Icons.home),
             label: 'Home',
           ),
-         
           BottomNavigationBarItem(
             icon: Icon(Icons.add_reaction_outlined),
             label: 'Incognito Mode',
