@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.makeface2">
 
+    <uses-permission android:name="android.permission.CAMERA" />
+
     <application
         android:name="${applicationName}"
         android:label="makeface2"

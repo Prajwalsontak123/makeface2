@@ -29,7 +29,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.makeface2"
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion 31
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName

@@ -6,6 +6,7 @@ import 'anime_chat.dart'; // Import the AnimeChatScreen
 import 'circle_screen.dart'; // Import the CircleScreen
 import 'home_chat.dart'; // Import the HomeChatScreen
 import 'profile_home.dart'; // Import the ProfileHome screen
+import 'story_creation_page.dart'; // Import the StoryCreationPage
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -57,7 +58,12 @@ class HomeScreen extends StatelessWidget {
                   return GestureDetector(
                     onTap: () {
                       if (index == 0) {
-                        _showAddStoryOptions(context); // Show add story options
+                        // Navigate to StoryCreationPage
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => StoryCreationPage()),
+                        );
                       } else {
                         // Handle story viewing
                       }
