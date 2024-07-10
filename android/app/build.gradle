@@ -25,15 +25,15 @@ if (flutterVersionName == null) {
 
 android {
     compileSdkVersion 34
-    buildToolsVersion "31.0.0" // Add build tools version
+    buildToolsVersion "31.0.0"
 
     defaultConfig {
         applicationId "com.example.makeface2"
-        minSdkVersion 24
+        minSdkVersion 21
         targetSdkVersion 31
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        multiDexEnabled true // Enable Multidex support
+        multiDexEnabled true
     }
 
     buildTypes {
@@ -70,5 +70,5 @@ flutter {
 }
 
 dependencies {
-    implementation 'com.android.support:multidex:2.0.1' // Add Multidex dependency
+    implementation 'com.android.support:multidex:2.0.1'
 }
