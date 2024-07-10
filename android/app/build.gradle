@@ -29,11 +29,11 @@ android {
 
     defaultConfig {
         applicationId "com.example.makeface2"
-        minSdkVersion 21
+        minSdkVersion 24 // Updated minSdkVersion to 24
         targetSdkVersion 31
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
-        multiDexEnabled true
+        multiDexEnabled true // Enable Multidex support
     }
 
     buildTypes {
@@ -70,5 +70,5 @@ flutter {
 }
 
 dependencies {
-    implementation 'com.android.support:multidex:2.0.1'
+    implementation 'com.android.support:multidex:2.0.1' // Add Multidex dependency
 }
