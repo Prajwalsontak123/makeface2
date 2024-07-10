@@ -8,6 +8,7 @@ import 'anime_chat.dart';
 import 'circle_screen.dart';
 import 'home_screen.dart';
 import 'settings_page.dart'; // Import the settings page
+import 'bottom_nav_bar.dart'; // Import the BottomNavBar widget
 
 class ProfileHome extends StatefulWidget {
   @override
@@ -171,13 +172,9 @@ class _ProfileHomeState extends State<ProfileHome> {
                     ],
                   ),
                 ),
-      bottomNavigationBar: BottomNavigationBar(
-        showSelectedLabels: false,
-        showUnselectedLabels: false,
-        selectedIconTheme: IconThemeData(color: Colors.black),
-        unselectedIconTheme: IconThemeData(color: Colors.black),
-        currentIndex: 4,
-        onTap: (int index) {
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: 4, // Set the current index to 4 (User Profile)
+        onTap: (index) {
           switch (index) {
             case 0:
               Navigator.pushReplacement(
@@ -201,31 +198,10 @@ class _ProfileHomeState extends State<ProfileHome> {
               _showAddPostOptions(context);
               break;
             case 4:
+              // Stay on ProfileHome screen
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_reaction_outlined),
-            label: 'Incognito Mode',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.trip_origin_outlined),
-            label: 'Circle',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Add Post',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'User Profile',
-          ),
-        ],
       ),
     );
   }
