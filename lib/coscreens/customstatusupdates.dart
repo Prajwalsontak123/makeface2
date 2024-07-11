@@ -9,6 +9,7 @@ class CustomStatusUpdatesPage extends StatefulWidget {
 class _CustomStatusUpdatesPageState extends State<CustomStatusUpdatesPage> {
   String _statusMessage = '';
   String _selectedEmoji = '😊'; // Default emoji
+  // ignore: unused_field
   String _notes = '';
 
   void _updateStatusMessage(String message) {

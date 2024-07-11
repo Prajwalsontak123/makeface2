@@ -13,7 +13,22 @@ import 'package:path_provider/path_provider.dart';
 import 'package:photofilters/photofilters.dart';
 import 'package:share_plus/share_plus.dart';
 
-// Add imports for AR filters, video editing, analytics, cloud storage, etc. if needed
+void main() {
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Demo',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: StoryCreationPage(),
+    );
+  }
+}
 
 class StoryCreationPage extends StatefulWidget {
   @override
@@ -23,9 +38,11 @@ class StoryCreationPage extends StatefulWidget {
 class _StoryCreationPageState extends State<StoryCreationPage> {
   CameraController? _cameraController;
   bool _isRecording = false;
+  bool _isPaused = false;
   bool _isFilterApplied = false;
   XFile? _imageFile;
   List<Filter> filters = presetFiltersList;
+  // ignore: unused_field
   imageLib.Image? _filteredImage;
   File? _filteredImageFile;
   List<CameraDescription>? cameras;
@@ -42,11 +59,13 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
   List<Widget> _stickers = [];
   GlobalKey _repaintBoundaryKey = GlobalKey();
 
+  Timer? _timer;
+  int _recordingDuration = 0;
+
   @override
   void initState() {
     super.initState();
     _initializeCamera();
-    // Initialize other features like AR filters, analytics, etc.
   }
 
   Future<void> _initializeCamera() async {
@@ -68,7 +87,6 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
   void dispose() {
     _cameraController?.dispose();
     _textController.dispose();
-    // Dispose other resources related to AR filters, analytics, etc.
     super.dispose();
   }
 
@@ -110,10 +128,18 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
                 ),
               CustomPaint(
                 painter: DrawingPainter(
-                    _drawingPoints, _drawingColor, _drawingThickness),
+                  _drawingPoints,
+                  _drawingColor,
+                  _drawingThickness,
+                ),
                 size: Size.infinite,
               ),
               ..._stickers,
+              Positioned(
+                top: 10,
+                left: 10,
+                child: _isRecording ? _buildTimerDisplay() : SizedBox(),
+              ),
               Positioned(
                 bottom: 0,
                 left: 0,
@@ -128,6 +154,14 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
                   onPressed: () {
                     Navigator.pop(context);
                   },
+                ),
+              ),
+              Positioned(
+                top: 50,
+                right: 20,
+                child: IconButton(
+                  icon: Icon(Icons.camera_alt, color: Colors.white),
+                  onPressed: _takePicture,
                 ),
               ),
             ],
@@ -146,12 +180,9 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
           children: [
             _controlButton(Icons.flash_on, _toggleFlash),
             _controlButton(Icons.filter, _applyFilter),
-            _controlButton(
-                _isRecording ? Icons.stop : Icons.fiber_manual_record,
-                _toggleRecording),
+            _controlButton(Icons.fiber_manual_record, _toggleRecording),
             _controlButton(Icons.image, _pickImage),
             _controlButton(Icons.switch_camera, _switchCamera),
-            // Add more buttons for AR filters, video editing, analytics, etc.
           ],
         ),
         SizedBox(height: 20),
@@ -178,7 +209,6 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
               child: Text('Stickers'),
               onPressed: _addSticker,
             ),
-            // Add more buttons for AR filters, video editing, analytics, etc.
           ],
         ),
         SizedBox(height: 20),
@@ -200,7 +230,20 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
                 });
               },
             ),
-            // Add more UI elements for AR filters, video editing, analytics, etc.
+          ],
+        ),
+        SizedBox(height: 20),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          children: [
+            ElevatedButton(
+              child: Text('Pause'),
+              onPressed: _pauseVideoRecording,
+            ),
+            ElevatedButton(
+              child: Text('Resume'),
+              onPressed: _resumeVideoRecording,
+            ),
           ],
         ),
         SizedBox(height: 20),
@@ -208,7 +251,6 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
           child: Text('Save & Share'),
           onPressed: _saveAndShare,
         ),
-        // Add more UI elements for AR filters, video editing, analytics, etc.
       ],
     );
   }
@@ -284,21 +326,118 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
   }
 
   Future<void> _toggleRecording() async {
-    setState(() {
-      _isRecording = !_isRecording;
-    });
-    if (_isRecording) {
-      await _cameraController!.startVideoRecording();
+    if (!_isRecording) {
+      try {
+        await _startVideoRecording();
+      } on CameraException catch (e) {
+        print('Error starting video recording: $e');
+        setState(() {
+          _isRecording = false;
+        });
+      }
     } else {
-      final XFile videoFile = await _cameraController!.stopVideoRecording();
-      print('Video saved to: ${videoFile.path}');
-      // Implement video editing functionalities here
+      try {
+        await _stopVideoRecording();
+      } on CameraException catch (e) {
+        print('Error stopping video recording: $e');
+        setState(() {
+          _isRecording = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _startVideoRecording() async {
+    if (!_cameraController!.value.isInitialized) {
+      return;
+    }
+    if (_cameraController!.value.isRecordingVideo) {
+      return;
+    }
+    try {
+      await _cameraController!.startVideoRecording();
+      setState(() {
+        _isRecording = true;
+        _startTimer();
+      });
+    } on CameraException catch (e) {
+      print('Error starting video recording: $e');
+      setState(() {
+        _isRecording = false;
+      });
+    }
+  }
+
+  Future<void> _stopVideoRecording() async {
+    if (!_cameraController!.value.isRecordingVideo) {
+      return;
+    }
+    try {
+      await _cameraController!.stopVideoRecording();
+      setState(() {
+        _isRecording = false;
+        _stopTimer();
+        _resetTimer();
+      });
+    } on CameraException catch (e) {
+      print('Error stopping video recording: $e');
+      setState(() {
+        _isRecording = false;
+      });
+    }
+  }
+
+  Future<void> _pauseVideoRecording() async {
+    if (!_cameraController!.value.isRecordingVideo || _isPaused) {
+      return;
+    }
+    try {
+      await _cameraController!.pauseVideoRecording();
+      setState(() {
+        _isPaused = true;
+        _stopTimer();
+      });
+    } on CameraException catch (e) {
+      print('Error pausing video recording: $e');
+    }
+  }
+
+  Future<void> _resumeVideoRecording() async {
+    if (!_cameraController!.value.isRecordingVideo || !_isPaused) {
+      return;
+    }
+    try {
+      await _cameraController!.resumeVideoRecording();
+      setState(() {
+        _isPaused = false;
+        _startTimer();
+      });
+    } on CameraException catch (e) {
+      print('Error resuming video recording: $e');
+    }
+  }
+
+  Future<void> _takePicture() async {
+    if (!_cameraController!.value.isInitialized) {
+      return;
+    }
+    if (_cameraController!.value.isTakingPicture) {
+      return;
+    }
+    try {
+      XFile picture = await _cameraController!.takePicture();
+      setState(() {
+        _imageFile = picture;
+        _isFilterApplied = false;
+      });
+    } on CameraException catch (e) {
+      print('Error taking picture: $e');
     }
   }
 
   Future<void> _pickImage() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    final ImagePicker picker = ImagePicker();
+    XFile? image = await picker.pickImage(source: ImageSource.gallery);
     if (image != null) {
       setState(() {
         _imageFile = image;
@@ -307,46 +446,24 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
     }
   }
 
-  void _switchCamera() async {
+  Future<void> _switchCamera() async {
     selectedCameraIdx = selectedCameraIdx == 0 ? 1 : 0;
-    await _cameraController?.dispose();
-    _initializeCamera();
+    await _initializeCamera();
   }
 
-  void _addTextOverlay() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Add Text Overlay'),
-          content: TextField(
-            controller: _textController,
-            decoration: InputDecoration(hintText: "Enter text"),
-            onChanged: (value) {
-              setState(() {
-                _overlayText = value;
-              });
-            },
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-              child: Text('Done'),
-            ),
-          ],
-        );
-      },
-    );
-    // Implement text styling options here
+  void _addTextOverlay() async {
+    String? text = await _showTextInputDialog();
+    if (text != null && text.isNotEmpty) {
+      setState(() {
+        _overlayText = text;
+      });
+    }
   }
 
   void _toggleDrawingMode() {
     setState(() {
       _isDrawing = !_isDrawing;
     });
-    // Implement advanced drawing tools here
   }
 
   void _onPanUpdate(DragUpdateDetails details) {
@@ -358,7 +475,7 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
   void _onPanEnd(DragEndDetails details) {
     setState(() {
       _undoStack.add(List.from(_drawingPoints));
-      _drawingPoints.add(Offset.zero);
+      _drawingPoints.clear();
     });
   }
 
@@ -366,11 +483,7 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
     if (_undoStack.isNotEmpty) {
       setState(() {
         _redoStack.add(_undoStack.removeLast());
-        if (_undoStack.isNotEmpty) {
-          _drawingPoints = _undoStack.last;
-        } else {
-          _drawingPoints = [];
-        }
+        _drawingPoints = _undoStack.isNotEmpty ? _undoStack.last : [];
       });
     }
   }
@@ -378,81 +491,127 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
   void _redoDrawing() {
     if (_redoStack.isNotEmpty) {
       setState(() {
-        _drawingPoints = _redoStack.removeLast();
-        _undoStack.add(List.from(_drawingPoints));
+        _undoStack.add(_redoStack.removeLast());
+        _drawingPoints = _undoStack.last;
       });
     }
   }
 
-  void _addSticker() async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? stickerImage =
-        await _picker.pickImage(source: ImageSource.gallery);
-    if (stickerImage != null) {
-      setState(() {
-        _stickers.add(
-          Positioned(
-            top: 100,
-            left: 100,
-            child: GestureDetector(
-              onPanUpdate: (details) {
-                setState(() {
-                  Offset stickerPosition = Offset(
-                      details.localPosition.dx, details.localPosition.dy);
-                  _stickers.removeLast();
-                  _stickers.add(Positioned(
-                    top: stickerPosition.dy,
-                    left: stickerPosition.dx,
-                    child: Image.file(File(stickerImage.path),
-                        width: 100, height: 100),
-                  ));
-                });
-              },
-              child:
-                  Image.file(File(stickerImage.path), width: 100, height: 100),
-            ),
+  void _addSticker() {
+    setState(() {
+      _stickers.add(
+        Positioned(
+          top: 100,
+          left: 100,
+          child: GestureDetector(
+            onPanUpdate: (details) {
+              setState(() {
+                _stickers.last = Positioned(
+                  top: details.localPosition.dy,
+                  left: details.localPosition.dx,
+                  child: _stickers.last,
+                );
+              });
+            },
+            child: Icon(Icons.tag_faces, size: 50, color: Colors.yellow),
           ),
-        );
-      });
-    }
-    // Implement custom stickers and emojis here
+        ),
+      );
+    });
   }
 
-  void _saveAndShare() async {
+  Future<void> _saveAndShare() async {
     RenderRepaintBoundary boundary = _repaintBoundaryKey.currentContext!
         .findRenderObject() as RenderRepaintBoundary;
     var image = await boundary.toImage();
     ByteData? byteData = await image.toByteData(format: ImageByteFormat.png);
     Uint8List pngBytes = byteData!.buffer.asUint8List();
 
-    // Save the image to a file
-    final String dir = (await getApplicationDocumentsDirectory()).path;
-    final String fullPath = path.join(dir, 'story.png');
-    File file = File(fullPath);
-    await file.writeAsBytes(pngBytes);
+    final directory = (await getApplicationDocumentsDirectory()).path;
+    File imgFile = File('$directory/screenshot.png');
+    await imgFile.writeAsBytes(pngBytes);
 
-    // Share the image
-    await Share.shareXFiles([XFile(fullPath)], text: 'Check out my story!');
-    // Implement social media sharing integration here
+    await Share.shareXFiles([XFile(imgFile.path)], text: 'Check out my story!');
+  }
+
+  Future<String?> _showTextInputDialog() async {
+    return showDialog<String>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Enter text'),
+          content: TextField(
+            controller: _textController,
+            decoration: InputDecoration(hintText: 'Text'),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(_textController.text);
+              },
+              child: Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _startTimer() {
+    _timer = Timer.periodic(Duration(seconds: 1), (timer) {
+      setState(() {
+        _recordingDuration++;
+      });
+    });
+  }
+
+  void _stopTimer() {
+    _timer?.cancel();
+  }
+
+  void _resetTimer() {
+    setState(() {
+      _recordingDuration = 0;
+    });
+  }
+
+  Widget _buildTimerDisplay() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.black.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      child: Text(
+        'Recording: ${_formatDuration(_recordingDuration)}',
+        style: TextStyle(color: Colors.white, fontSize: 16),
+      ),
+    );
+  }
+
+  String _formatDuration(int duration) {
+    int minutes = duration ~/ 60;
+    int seconds = duration % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 }
 
 class DrawingPainter extends CustomPainter {
   final List<Offset> points;
   final Color color;
-  final double thickness;
+  final double strokeWidth;
 
-  DrawingPainter(this.points, this.color, this.thickness);
+  DrawingPainter(this.points, this.color, this.strokeWidth);
 
   @override
   void paint(Canvas canvas, Size size) {
     Paint paint = Paint()
       ..color = color
       ..strokeCap = StrokeCap.round
-      ..strokeWidth = thickness;
-
+      ..strokeWidth = strokeWidth;
     for (int i = 0; i < points.length - 1; i++) {
-      if (points[i] != Offset.zero && points[i + 1] != Offset.zero) {
+      // ignore: unnecessary_null_comparison
+      if (points[i] != null && points[i + 1] != null) {
         canvas.drawLine(points[i], points[i + 1], paint);
       }
     }
@@ -460,8 +619,6 @@ class DrawingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(DrawingPainter oldDelegate) {
-    return oldDelegate.points != points ||
-        oldDelegate.color != color ||
-        oldDelegate.thickness != thickness;
+    return oldDelegate.points != points;
   }
 }
