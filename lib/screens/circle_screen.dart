@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Import image_picker package
-// Import dart:io to access Platform files
-import 'anime_chat.dart'; // Import the AnimeChatScreen
-import 'home_screen.dart';
-import 'circle_profile.dart'; // Import the CircleProfile
+import 'package:makeface2/screens/anime_chat.dart';
+import 'package:makeface2/screens/circle_profile.dart';
+import 'package:makeface2/screens/home_screen.dart';
+import 'bottom_nav_bar.dart';
 
 class CircleScreen extends StatelessWidget {
   @override
@@ -164,15 +163,7 @@ class CircleScreen extends StatelessWidget {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        showSelectedLabels: false, // Hide labels for selected item
-        showUnselectedLabels: false, // Hide labels for unselected items
-        selectedIconTheme: IconThemeData(
-          color: Colors.black,
-        ), // Set the selected icon color to black
-        unselectedIconTheme: IconThemeData(
-          color: Colors.black,
-        ), // Set the unselected icon color to black
+      bottomNavigationBar: BottomNavBar(
         currentIndex: 2, // Set the current index to 2 (Circle)
         onTap: (index) {
           // Navigate to the corresponding screen based on the tapped index
@@ -196,7 +187,7 @@ class CircleScreen extends StatelessWidget {
               break;
             case 3:
               // Show dialog box when "Add Post" icon is tapped
-              _showAddPostOptions(context);
+              showAddPostOptions(context);
               break;
             case 4:
               // Navigate to circle_profile.dart
@@ -207,78 +198,7 @@ class CircleScreen extends StatelessWidget {
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_reaction_outlined),
-            label: 'Incognito Mode',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.trip_origin_outlined),
-            label: 'Circle',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Add Post',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'User Profile',
-          ),
-        ],
       ),
     );
-  }
-
-  void _showAddPostOptions(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Choose Files'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: Icon(Icons.add_a_photo),
-                title: Text('Camera'),
-                onTap: () {
-                  _openCamera(context);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.insert_drive_file),
-                title: Text('Local Storage'),
-                onTap: () {
-                  _openGallery(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _openCamera(BuildContext context) async {
-    final pickedFile = await ImagePicker().getImage(source: ImageSource.camera);
-    Navigator.pop(context); // Close the dialog
-    // Handle the picked file as needed
-    if (pickedFile != null) {
-      // Do something with the picked image
-    }
-  }
-
-  void _openGallery(BuildContext context) async {
-    final pickedFile =
-        await ImagePicker().getImage(source: ImageSource.gallery);
-    Navigator.pop(context); // Close the dialog
-    // Handle the picked file as needed
-    if (pickedFile != null) {
-      // Do something with the picked image
-    }
   }
 }

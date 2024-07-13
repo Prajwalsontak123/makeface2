@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:makeface2/screens/anime_chat.dart';
+import 'package:makeface2/screens/circle_profile.dart';
+import 'package:makeface2/screens/circle_screen.dart';
 
-import '../coscreens/home_searchbar.dart'; // Import the HomeSearchBar screen
-import 'anime_chat.dart'; // Import the AnimeChatScreen
-import 'circle_screen.dart'; // Import the CircleScreen
-import 'home_chat.dart'; // Import the HomeChatScreen
-import 'profile_home.dart'; // Import the ProfileHome screen
-import 'story_creation_page.dart'; // Import the StoryCreationPage
+import '../coscreens/home_searchbar.dart';
+import 'bottom_nav_bar.dart';
+import 'story_creation_page.dart';
 
 class HomeScreen extends StatelessWidget {
   @override
@@ -24,7 +23,6 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.search),
             onPressed: () {
-              // Navigate to HomeSearchBar when search icon is tapped
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => HomeSearchBar()),
@@ -34,10 +32,9 @@ class HomeScreen extends StatelessWidget {
           IconButton(
             icon: Icon(Icons.message),
             onPressed: () {
-              // Navigate to HomeChatScreen when message icon is tapped
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => HomeChatScreen()),
+                MaterialPageRoute(builder: (context) => AnimeChatScreen()),
               );
             },
           ),
@@ -47,18 +44,16 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // "Your Story" section
             Container(
               height: 100.0,
               margin: EdgeInsets.symmetric(vertical: 10.0),
               child: ListView.builder(
                 scrollDirection: Axis.horizontal,
-                itemCount: 10, // Replace with actual number of stories
+                itemCount: 10,
                 itemBuilder: (BuildContext context, int index) {
                   return GestureDetector(
                     onTap: () {
                       if (index == 0) {
-                        // Navigate to StoryCreationPage
                         Navigator.push(
                           context,
                           MaterialPageRoute(
@@ -75,7 +70,7 @@ class HomeScreen extends StatelessWidget {
                           CircleAvatar(
                             radius: 35.0,
                             backgroundColor: index == 0
-                                ? Colors.blue // Color for "Your Story"
+                                ? Colors.blue
                                 : const Color.fromARGB(255, 173, 175, 177),
                             child: index == 0
                                 ? SizedBox.shrink()
@@ -108,11 +103,10 @@ class HomeScreen extends StatelessWidget {
                 },
               ),
             ),
-            // Add the news feed
             ListView.builder(
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
-              itemCount: 20, // Example number of posts
+              itemCount: 20,
               itemBuilder: (BuildContext context, int index) {
                 return Container(
                   padding: EdgeInsets.all(10.0),
@@ -171,17 +165,13 @@ class HomeScreen extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        showSelectedLabels: false, // Hide labels for selected item
-        showUnselectedLabels: false, // Hide labels for unselected items
-        selectedIconTheme: IconThemeData(color: Colors.black),
-        unselectedIconTheme: IconThemeData(color: Colors.black),
-        currentIndex: 0, // Set the current index to 0 (Home)
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: 0, // Set the current index to 0 (HomeScreen)
         onTap: (index) {
           // Navigate to the corresponding screen based on the tapped index
           switch (index) {
             case 0:
-              // Navigate to HomeScreen
+              // Do nothing, already in HomeScreen
               break;
             case 1:
               // Navigate to AnimeChatScreen
@@ -198,92 +188,20 @@ class HomeScreen extends StatelessWidget {
               );
               break;
             case 3:
-              // Handle navigation to Add Post
+              // Show dialog box when "Add Post" icon is tapped
               _showAddPostOptions(context);
               break;
             case 4:
-              // Navigate to ProfileHome
-              Navigator.pushReplacement(
+              // Navigate to CircleProfile
+              Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => ProfileHome()),
+                MaterialPageRoute(builder: (context) => CircleProfile()),
               );
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_reaction_outlined),
-            label: 'Incognito Mode',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.trip_origin_outlined),
-            label: 'Circle',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Add Post',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'User Profile',
-          ),
-        ],
       ),
     );
-  }
-
-  void _showAddStoryOptions(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Add to Your Story'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: Icon(Icons.add_a_photo),
-                title: Text('Camera'),
-                onTap: () {
-                  _openCamera(context);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.insert_drive_file),
-                title: Text('Gallery'),
-                onTap: () {
-                  _openGallery(context);
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  // Function to open the camera for adding a story
-  void _openCamera(BuildContext context) async {
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: ImageSource.camera);
-    if (pickedImage != null) {
-      // Handle the picked image for story
-    }
-  }
-
-  // Function to open the gallery for adding a story
-  void _openGallery(BuildContext context) async {
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedImage != null) {
-      // Handle the picked image for story
-    }
   }
 
   void _showAddPostOptions(BuildContext context) {
@@ -299,7 +217,7 @@ class HomeScreen extends StatelessWidget {
                 leading: Icon(Icons.add_a_photo),
                 title: Text('Camera'),
                 onTap: () {
-                  _openCameraForPost(context);
+                  // Handle camera option
                   Navigator.pop(context);
                 },
               ),
@@ -307,7 +225,7 @@ class HomeScreen extends StatelessWidget {
                 leading: Icon(Icons.insert_drive_file),
                 title: Text('Local Storage'),
                 onTap: () {
-                  _openLocalStorage(context);
+                  // Handle local storage option
                   Navigator.pop(context);
                 },
               ),
@@ -316,23 +234,5 @@ class HomeScreen extends StatelessWidget {
         );
       },
     );
-  }
-
-  // Function to open the camera for adding a post
-  void _openCameraForPost(BuildContext context) async {
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: ImageSource.camera);
-    if (pickedImage != null) {
-      // Handle the picked image
-    }
-  }
-
-  // Function to open the device's local storage for adding a post
-  void _openLocalStorage(BuildContext context) async {
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedImage != null) {
-      // Handle the picked image
-    }
   }
 }

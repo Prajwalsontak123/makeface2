@@ -4,6 +4,7 @@ import 'package:makeface2/screens/anime_chat.dart';
 import '../coscreens/anime_edit_profile.dart'; // Import the EditProfileScreen
 import 'circle_screen.dart'; // Import the CircleScreen
 import 'home_screen.dart'; // Import the HomeScreen
+import 'bottom_nav_bar.dart'; // Import the BottomNavBar widget
 
 class ProfileAnime extends StatefulWidget {
   @override
@@ -17,8 +18,7 @@ class _ProfileAnimeState extends State<ProfileAnime> {
     // Add logic to select an image from gallery or camera
     setState(() {
       // Update the image path with the selected image
-      _imagePath =
-          'assets/selected_image.png'; // Replace with actual image path
+      _imagePath = 'assets/selected_image.png'; // Replace with actual image path
     });
   }
 
@@ -43,21 +43,18 @@ class _ProfileAnimeState extends State<ProfileAnime> {
           SizedBox(height: 20.0),
           // Row to display avatar, name, and biography
           Row(
-            mainAxisAlignment:
-                MainAxisAlignment.start, // Align children to the start
+            mainAxisAlignment: MainAxisAlignment.start, // Align children to the start
             children: <Widget>[
               // Add spacing around the rectangular avatar
               Padding(
-                padding: EdgeInsets.fromLTRB(
-                    10.0, 20.0, 20.0, 20.0), // Adjust left padding here
+                padding: EdgeInsets.fromLTRB(10.0, 20.0, 20.0, 20.0), // Adjust left padding here
                 child: GestureDetector(
                   onTap: _selectImage,
                   child: Container(
                     width: 160,
                     height: 200,
                     decoration: BoxDecoration(
-                      color: Colors
-                          .blue, // You can replace this with your background image
+                      color: Colors.blue, // You can replace this with your background image
                       borderRadius: BorderRadius.circular(20),
                       image: DecorationImage(
                         image: AssetImage(_imagePath),
@@ -84,8 +81,7 @@ class _ProfileAnimeState extends State<ProfileAnime> {
                 children: <Widget>[
                   Text(
                     'John Doe',
-                    style:
-                        TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 24.0, fontWeight: FontWeight.bold),
                   ),
                   SizedBox(height: 10.0),
                   Text(
@@ -111,15 +107,7 @@ class _ProfileAnimeState extends State<ProfileAnime> {
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        showSelectedLabels: false, // Hide labels for selected item
-        showUnselectedLabels: false, // Hide labels for unselected items
-        selectedIconTheme: IconThemeData(
-          color: Colors.black,
-        ), // Set the selected icon color to black
-        unselectedIconTheme: IconThemeData(
-          color: Colors.black,
-        ), // Set the unselected icon color to black
+      bottomNavigationBar: BottomNavBar(
         currentIndex: 4, // Set the current index to 4 (User Profile)
         onTap: (index) {
           // Navigate to the corresponding screen based on the tapped index
@@ -132,7 +120,11 @@ class _ProfileAnimeState extends State<ProfileAnime> {
               );
               break;
             case 1:
-              // Handle navigation to Incognito Mode (if needed)
+              // Navigate to AnimeChatScreen
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => AnimeChatScreen()),
+              );
               break;
             case 2:
               // Navigate to CircleScreen
@@ -149,28 +141,6 @@ class _ProfileAnimeState extends State<ProfileAnime> {
               break;
           }
         },
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add_reaction_outlined),
-            label: 'Incognito Mode',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.trip_origin_outlined),
-            label: 'Circle',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Add Post',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'User Profile',
-          ),
-        ],
       ),
     );
   }

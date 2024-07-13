@@ -1,4 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:makeface2/screens/circle_profile.dart';
+import 'package:makeface2/screens/circle_screen.dart';
+import 'package:makeface2/screens/home_screen.dart';
+import 'package:makeface2/screens/profile_home.dart'; // Import profile_home.dart
+import 'bottom_nav_bar.dart';
 
 class HomeChatScreen extends StatefulWidget {
   @override
@@ -59,6 +64,42 @@ class _HomeChatScreenState extends State<HomeChatScreen> {
           ),
           _buildMessageComposer(),
         ],
+      ),
+      bottomNavigationBar: BottomNavBar(
+        currentIndex: 1, // Set the current index to 1 (HomeChatScreen)
+        onTap: (index) {
+          // Navigate to the corresponding screen based on the tapped index
+          switch (index) {
+            case 0:
+              // Navigate to HomeScreen
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => HomeScreen()),
+              );
+              break;
+            case 1:
+              // Do nothing, already in HomeChatScreen
+              break;
+            case 2:
+              // Navigate to CircleScreen
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => CircleScreen()),
+              );
+              break;
+            case 3:
+              // Show dialog box when "Add Post" icon is tapped
+              showAddPostOptions(context);
+              break;
+            case 4:
+              // Navigate to profile_home.dart
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => ProfileHome()),
+              );
+              break;
+          }
+        },
       ),
     );
   }
