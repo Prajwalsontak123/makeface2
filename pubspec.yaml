@@ -9,7 +9,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  image: 3.3.0
   cupertino_icons: ^1.0.6
   firebase_core: ^2.7.0
   firebase_auth: ^4.2.9
@@ -24,25 +23,25 @@ dependencies:
   video_trimmer: ^3.0.1
   video_player: ^2.8.7
   instagram_share: ^0.2.1
-  image_editor: ^1.5.1
-  photo_view: ^0.15.0
-  flutter_signature_pad: ^3.0.1
-  path_provider: ^2.0.11
+  camera: ^0.11.0+1
   ffmpeg_kit_flutter: ^6.0.3
   geolocator: ^12.0.0
-  camera: ^0.11.0+1
-  permission_handler: ^10.0.0
-  flutter_colorpicker: ^1.1.0
-  audioplayers: ^6.0.0
-  photofilters: ^3.0.1
-  share_plus: ^9.0.0
-
-
+  font_awesome_flutter: ^9.0.0
+  photo_gallery: ^1.0.1
+  video_player: ^2.7.0
+  cached_network_image: ^3.2.3
+  url_launcher: ^6.1.11
+  flutter_colorpicker: ^1.0.3
+  firebase_storage: ^12.1.1
+  cloud_firestore: ^5.1.0
+  image_cropper: ^7.1.0
+  image: ^4.0.14
+  photo_manager: ^3.2.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.1
+  flutter_lints: ^4.0.0
 
 flutter:
   uses-material-design: true

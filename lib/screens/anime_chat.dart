@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
+import '../coscreens/anime_edit_profile.dart';
+import 'bottom_nav_bar.dart';
 import 'circle_screen.dart';
 import 'home_screen.dart';
 import 'profile_anime.dart';
-import '../coscreens/anime_edit_profile.dart';
-import 'bottom_nav_bar.dart';
 
 class AnimeChatScreen extends StatelessWidget {
   @override
@@ -87,7 +88,8 @@ class AnimeChatScreen extends StatelessWidget {
               padding: EdgeInsets.symmetric(vertical: 20.0),
               children: [
                 buildChatMessage('User 1', 'Hey, how are you?'),
-                buildChatMessage('User 2', 'I\'m doing great! Thanks for asking.'),
+                buildChatMessage(
+                    'User 2', 'I\'m doing great! Thanks for asking.'),
                 buildChatMessage('User 1', 'Wanna hang out later?'),
                 buildChatMessage('User 2', 'Sure, where do you want to meet?'),
                 buildChatMessage('User 1', 'How about the park?'),
@@ -180,7 +182,7 @@ class AnimeChatScreen extends StatelessWidget {
 
   void _getImageFromCamera(BuildContext context) async {
     final picker = ImagePicker();
-    final pickedImage = await picker.getImage(source: ImageSource.camera);
+    final pickedImage = await picker.pickImage(source: ImageSource.camera);
     if (pickedImage != null) {
       // Handle the picked image here
     }
@@ -188,7 +190,7 @@ class AnimeChatScreen extends StatelessWidget {
 
   void _getImageFromGallery(BuildContext context) async {
     final picker = ImagePicker();
-    final pickedImage = await picker.getImage(source: ImageSource.gallery);
+    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
       // Handle the picked image here
     }

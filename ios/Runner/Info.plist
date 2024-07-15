@@ -45,11 +45,17 @@
     <true/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
-    
+
     <!-- Added camera usage description -->
     <key>NSCameraUsageDescription</key>
-    <string>This app needs access to the camera to take photos and videos.</string>
-    
+    <string>We need access to the camera to take photos and videos.</string>
+
+    <!-- Added photo library usage descriptions -->
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>We need access to your photo library to select and upload photos.</string>
+    <key>NSPhotoLibraryAddUsageDescription</key>
+    <string>We need access to save photos to your photo library.</string>
+
     <!-- Add your custom keys or configurations here -->
 </dict>
 </plist>

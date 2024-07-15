@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import 'anime_chat.dart';
-import 'home_screen.dart';
-import 'circle_profile.dart';
 
 class BottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -80,7 +79,7 @@ void showAddPostOptions(BuildContext context) {
 }
 
 void openCamera(BuildContext context) async {
-  final pickedFile = await ImagePicker().getImage(source: ImageSource.camera);
+  final pickedFile = await ImagePicker().pickImage(source: ImageSource.camera);
   Navigator.pop(context); // Close the dialog
   // Handle the picked file as needed
   if (pickedFile != null) {
@@ -89,10 +88,16 @@ void openCamera(BuildContext context) async {
 }
 
 void openGallery(BuildContext context) async {
-  final pickedFile = await ImagePicker().getImage(source: ImageSource.gallery);
+  final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
   Navigator.pop(context); // Close the dialog
   // Handle the picked file as needed
   if (pickedFile != null) {
     // Do something with the picked image
   }
+}
+
+void main() {
+  runApp(MaterialApp(
+    home: AnimeChatScreen(),
+  ));
 }
