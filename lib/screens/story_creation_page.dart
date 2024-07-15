@@ -1,10 +1,7 @@
 import 'dart:typed_data';
 
-import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:photo_gallery/photo_gallery.dart';
+import 'package:photo_manager/photo_manager.dart';
 
 class StoryCreationPage extends StatefulWidget {
   @override
@@ -12,244 +9,191 @@ class StoryCreationPage extends StatefulWidget {
 }
 
 class _StoryCreationPageState extends State<StoryCreationPage> {
-  CameraController? _controller;
-  List<CameraDescription>? cameras;
-  CameraDescription? selectedCamera;
-  bool _isFrontCamera = false;
-  FlashMode _flashMode = FlashMode.off;
-  double _zoomLevel = 1.0;
-  int _selectedIndex = 0;
+  List<AssetEntity> _assets = [];
+  String _selectedOption = 'Recents';
+  int _currentPage = 0;
+  final int _pageSize = 100;
+  bool _hasMoreAssets = true;
 
   @override
   void initState() {
     super.initState();
-    requestPermissions();
+    _loadAssets();
   }
 
-  Future<void> requestPermissions() async {
-    await Permission.camera.request();
-    await Permission.photos.request();
-    await initializeCamera();
-  }
-
-  Future<void> initializeCamera() async {
-    cameras = await availableCameras();
-    selectedCamera = cameras!.first;
-
-    _controller = CameraController(selectedCamera!, ResolutionPreset.high);
-    await _controller!.initialize();
-    setState(() {});
-  }
-
-  @override
-  void dispose() {
-    _controller?.dispose();
-    super.dispose();
-  }
-
-  void switchCamera() async {
-    if (cameras == null || cameras!.isEmpty) return;
-
-    _isFrontCamera = !_isFrontCamera;
-    selectedCamera = _isFrontCamera ? cameras![1] : cameras![0];
-
-    _controller = CameraController(selectedCamera!, ResolutionPreset.high);
-    await _controller!.initialize();
-    setState(() {});
-  }
-
-  void toggleFlash() {
-    _flashMode = _flashMode == FlashMode.off ? FlashMode.torch : FlashMode.off;
-    _controller?.setFlashMode(_flashMode);
-    setState(() {});
-  }
-
-  Future<void> startVideoRecording() async {
-    if (_controller!.value.isRecordingVideo) return;
-
+  Future<void> _loadAssets() async {
     try {
-      await _controller!.startVideoRecording();
-      print('Video recording started');
+      final PermissionState ps = await PhotoManager.requestPermissionExtend();
+      if (ps.isAuth) {
+        final albums = await PhotoManager.getAssetPathList(onlyAll: true);
+        if (albums.isNotEmpty) {
+          final recentAlbum = albums.first;
+          final assets = await recentAlbum.getAssetListRange(
+            start: _currentPage * _pageSize,
+            end: (_currentPage + 1) * _pageSize,
+          );
+
+          setState(() {
+            _assets.addAll(assets);
+            _currentPage++;
+            _hasMoreAssets = assets.length == _pageSize;
+          });
+          print('Number of assets loaded: ${_assets.length}');
+        } else {
+          print('No albums found');
+        }
+      } else {
+        print('Permission denied');
+      }
     } catch (e) {
-      print('Error starting video recording: $e');
+      print('Error loading assets: $e');
     }
   }
 
-  Future<void> stopVideoRecording() async {
-    if (!_controller!.value.isRecordingVideo) return;
+  Future<void> _loadMoreAssets() async {
+    if (!_hasMoreAssets) return;
 
-    try {
-      final videoFile = await _controller!.stopVideoRecording();
-      print('Video recorded: ${videoFile.path}');
-    } catch (e) {
-      print('Error stopping video recording: $e');
-    }
-  }
-
-  void applyFilter() {
-    print("Filter applied");
-  }
-
-  void addTextOverlay() {
-    print("Text overlay added");
-  }
-
-  void addSticker() {
-    print("Sticker added");
-  }
-
-  void addAREffect() {
-    print("AR effect applied");
-  }
-
-  void onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-
-    switch (_selectedIndex) {
-      case 0:
-        print("Photo mode selected");
-        break;
-      case 1:
-        print("Video mode selected");
-        startVideoRecording();
-        break;
-      case 2:
-        print("Story mode selected");
-        break;
-      case 3:
-        print("Reels mode selected");
-        break;
-      case 4:
-        print("Live mode selected");
-        break;
-    }
-  }
-
-  Future<List<Medium>> fetchRecentPhotos() async {
-    List<Album> albums =
-        await PhotoGallery.listAlbums(mediumType: MediumType.image);
+    final albums = await PhotoManager.getAssetPathList(onlyAll: true);
     if (albums.isNotEmpty) {
-      Album album = albums.first;
-      MediaPage mediaPage = await album.listMedia();
-      return mediaPage.items;
+      final recentAlbum = albums.first;
+      final assets = await recentAlbum.getAssetListRange(
+        start: _currentPage * _pageSize,
+        end: (_currentPage + 1) * _pageSize,
+      );
+
+      setState(() {
+        _assets.addAll(assets);
+        _currentPage++;
+        _hasMoreAssets = assets.length == _pageSize;
+      });
     }
-    return [];
+  }
+
+  void _selectAsset(AssetEntity asset) {
+    // Implement the functionality to select an asset
+    print('Selected asset ID: ${asset.id}');
+    // Navigate to editing page or perform another action
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_controller == null || !_controller!.value.isInitialized) {
-      return Center(child: CircularProgressIndicator());
-    }
-
     return Scaffold(
-      body: Stack(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: Text('Add to story', style: TextStyle(color: Colors.white)),
+        leading: IconButton(
+          icon: Icon(Icons.close, color: Colors.white),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings, color: Colors.white),
+            onPressed: () {
+              // Implement settings functionality
+            },
+          ),
+        ],
+      ),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (_selectedIndex == 0)
-            FutureBuilder<List<Medium>>(
-              future: fetchRecentPhotos(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('Error fetching photos'));
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return Center(child: Text('No photos found'));
-                }
-                return GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3),
-                  itemCount: snapshot.data!.length,
-                  itemBuilder: (context, index) {
-                    Medium medium = snapshot.data![index];
-                    return FutureBuilder<Uint8List?>(
-                      future: medium.getThumbnail(),
-                      builder: (context, snapshot) {
-                        if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return Center(child: CircularProgressIndicator());
-                        }
-                        if (snapshot.hasError || !snapshot.hasData) {
-                          return Center(child: Text('Error loading thumbnail'));
-                        }
-                        return Image.memory(snapshot.data!, fit: BoxFit.cover);
-                      },
-                    );
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildOptionButton(Icons.camera_alt, 'Camera'),
+                _buildOptionButton(Icons.grid_4x4, 'Drafts'),
+                _buildOptionButton(Icons.photo, 'Photos'),
+                _buildOptionButton(Icons.play_circle_outline, 'Videos'),
+              ],
+            ),
+          ),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                DropdownButton<String>(
+                  value: _selectedOption,
+                  dropdownColor: Colors.black,
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                  icon: Icon(Icons.arrow_drop_down, color: Colors.white),
+                  underline: Container(height: 0),
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      _selectedOption = newValue!;
+                    });
                   },
+                  items: <String>['Recents', 'Last Week', 'Last Month']
+                      .map<DropdownMenuItem<String>>((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value),
+                    );
+                  }).toList(),
+                ),
+                TextButton(
+                  child: Text('Select',
+                      style: TextStyle(color: Colors.white, fontSize: 16)),
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.grey[800],
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                  onPressed: () {
+                    // Implement select functionality
+                  },
+                ),
+              ],
+            ),
+          ),
+          Expanded(
+            child: GridView.builder(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 3,
+                crossAxisSpacing: 1,
+                mainAxisSpacing: 1,
+              ),
+              itemCount: _assets.length,
+              itemBuilder: (context, index) {
+                if (index == _assets.length - 1 && _hasMoreAssets) {
+                  _loadMoreAssets();
+                }
+                return GestureDetector(
+                  onTap: () => _selectAsset(_assets[index]),
+                  child: FutureBuilder<Uint8List?>(
+                    future: _assets[index].thumbnailData,
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.done &&
+                          snapshot.data != null) {
+                        return Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.memory(
+                              snapshot.data!,
+                              fit: BoxFit.cover,
+                            ),
+                            if (_assets[index].type == AssetType.video)
+                              Positioned(
+                                right: 5,
+                                bottom: 5,
+                                child: Icon(Icons.play_circle_outline,
+                                    color: Colors.white, size: 24),
+                              ),
+                          ],
+                        );
+                      } else {
+                        return Container(color: Colors.grey[800]);
+                      }
+                    },
+                  ),
                 );
               },
-            )
-          else
-            CameraPreview(_controller!),
-          _buildCaptureButton(),
-          _buildGalleryAccessButton(),
-          _buildOtherControls(),
-          _buildZoomSlider(),
-        ],
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
-          BottomNavigationBarItem(
-            icon: Icon(Icons.photo),
-            label: 'Photo',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.videocam),
-            label: 'Video',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.camera),
-            label: 'Story',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.movie),
-            label: 'Reels',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.live_tv),
-            label: 'Live',
-          ),
-        ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.amber[800],
-        onTap: onItemTapped,
-      ),
-    );
-  }
-
-  Widget _buildCaptureButton() {
-    return Positioned(
-      bottom: 80,
-      left: 0,
-      right: 0,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          FloatingActionButton(
-            onPressed: () async {
-              if (_selectedIndex == 1) {
-                if (_controller!.value.isRecordingVideo) {
-                  await stopVideoRecording();
-                } else {
-                  await startVideoRecording();
-                }
-              } else {
-                try {
-                  final image = await _controller!.takePicture();
-                  print('Image captured: ${image.path}');
-                } catch (e) {
-                  print(e);
-                }
-              }
-            },
-            child: Icon(
-              _selectedIndex == 1 && _controller!.value.isRecordingVideo
-                  ? Icons.stop
-                  : Icons.camera,
             ),
           ),
         ],
@@ -257,90 +201,21 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
     );
   }
 
-  Widget _buildGalleryAccessButton() {
-    return Positioned(
-      bottom: 20,
-      right: 20,
-      child: IconButton(
-        icon: Icon(Icons.photo_library),
-        onPressed: () async {
-          final picker = ImagePicker();
-          final pickedFile =
-              await picker.pickImage(source: ImageSource.gallery);
-          if (pickedFile != null) {
-            print('Image selected: ${pickedFile.path}');
-          }
-        },
-      ),
+  Widget _buildOptionButton(IconData icon, String label) {
+    return Column(
+      children: [
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: Colors.grey[800],
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Icon(icon, color: Colors.white, size: 30),
+        ),
+        SizedBox(height: 8),
+        Text(label, style: TextStyle(color: Colors.white)),
+      ],
     );
   }
-
-  Widget _buildOtherControls() {
-    return Positioned(
-      top: 40,
-      left: 20,
-      child: Column(
-        children: [
-          IconButton(
-            icon: Icon(Icons.switch_camera),
-            onPressed: switchCamera,
-          ),
-          IconButton(
-            icon: Icon(
-                _flashMode == FlashMode.off ? Icons.flash_off : Icons.flash_on),
-            onPressed: toggleFlash,
-          ),
-          IconButton(
-            icon: Icon(Icons.filter),
-            onPressed: applyFilter,
-          ),
-          IconButton(
-            icon: Icon(Icons.text_fields),
-            onPressed: addTextOverlay,
-          ),
-          IconButton(
-            icon: Icon(Icons.emoji_emotions),
-            onPressed: addSticker,
-          ),
-          IconButton(
-            icon: Icon(Icons.face),
-            onPressed: addAREffect,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildZoomSlider() {
-    return Positioned(
-      bottom: 150,
-      right: 10,
-      child: Column(
-        children: [
-          Icon(Icons.zoom_in),
-          RotatedBox(
-            quarterTurns: 3,
-            child: Slider(
-              value: _zoomLevel,
-              min: 1.0,
-              max: 8.0,
-              onChanged: (value) {
-                setState(() {
-                  _zoomLevel = value;
-                  _controller?.setZoomLevel(_zoomLevel);
-                });
-              },
-            ),
-          ),
-          Icon(Icons.zoom_out),
-        ],
-      ),
-    );
-  }
-}
-
-void main() {
-  runApp(MaterialApp(
-    home: StoryCreationPage(),
-  ));
 }
