@@ -1,7 +1,23 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:makeface2/screens/aftercapture.dart';
+import 'package:makeface2/screens/camera_settings.dart';
+import 'package:makeface2/screens/upload_page.dart';
 import 'package:photo_manager/photo_manager.dart';
+
+void main() {
+  runApp(StoryCreationApp());
+}
+
+class StoryCreationApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      home: StoryCreationPage(),
+    );
+  }
+}
 
 class StoryCreationPage extends StatefulWidget {
   @override
@@ -14,6 +30,7 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
   int _currentPage = 0;
   final int _pageSize = 100;
   bool _hasMoreAssets = true;
+  RequestType _requestType = RequestType.all;
 
   @override
   void initState() {
@@ -21,11 +38,26 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
     _loadAssets();
   }
 
-  Future<void> _loadAssets() async {
+  RequestType _getRequestType(AssetType? type) {
+    switch (type) {
+      case AssetType.image:
+        return RequestType.image;
+      case AssetType.video:
+        return RequestType.video;
+      default:
+        return RequestType.all;
+    }
+  }
+
+  Future<void> _loadAssets({AssetType? type}) async {
     try {
       final PermissionState ps = await PhotoManager.requestPermissionExtend();
       if (ps.isAuth) {
-        final albums = await PhotoManager.getAssetPathList(onlyAll: true);
+        _requestType = _getRequestType(type);
+        final albums = await PhotoManager.getAssetPathList(
+          type: _requestType,
+          onlyAll: true,
+        );
         if (albums.isNotEmpty) {
           final recentAlbum = albums.first;
           final assets = await recentAlbum.getAssetListRange(
@@ -34,16 +66,11 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
           );
 
           setState(() {
-            _assets.addAll(assets);
+            _assets = assets;
             _currentPage++;
             _hasMoreAssets = assets.length == _pageSize;
           });
-          print('Number of assets loaded: ${_assets.length}');
-        } else {
-          print('No albums found');
         }
-      } else {
-        print('Permission denied');
       }
     } catch (e) {
       print('Error loading assets: $e');
@@ -53,7 +80,10 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
   Future<void> _loadMoreAssets() async {
     if (!_hasMoreAssets) return;
 
-    final albums = await PhotoManager.getAssetPathList(onlyAll: true);
+    final albums = await PhotoManager.getAssetPathList(
+      type: _requestType,
+      onlyAll: true,
+    );
     if (albums.isNotEmpty) {
       final recentAlbum = albums.first;
       final assets = await recentAlbum.getAssetListRange(
@@ -69,10 +99,25 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
     }
   }
 
-  void _selectAsset(AssetEntity asset) {
-    // Implement the functionality to select an asset
-    print('Selected asset ID: ${asset.id}');
-    // Navigate to editing page or perform another action
+  void _selectAsset(AssetEntity asset) async {
+    final file = await asset.file;
+    if (file != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => AfterCapture(imagePath: file.path),
+        ),
+      );
+    }
+  }
+
+  void _filterAssets(AssetType type) {
+    setState(() {
+      _assets = [];
+      _currentPage = 0;
+      _hasMoreAssets = true;
+    });
+    _loadAssets(type: type);
   }
 
   @override
@@ -90,7 +135,10 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
           IconButton(
             icon: Icon(Icons.settings, color: Colors.white),
             onPressed: () {
-              // Implement settings functionality
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CameraSettingsApp()),
+              );
             },
           ),
         ],
@@ -103,10 +151,25 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildOptionButton(Icons.camera_alt, 'Camera'),
-                _buildOptionButton(Icons.grid_4x4, 'Drafts'),
-                _buildOptionButton(Icons.photo, 'Photos'),
-                _buildOptionButton(Icons.play_circle_outline, 'Videos'),
+                _buildOptionButton(
+                  Icons.camera_alt,
+                  'Camera',
+                  () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => CameraScreen()),
+                    );
+                  },
+                ),
+                _buildOptionButton(Icons.grid_4x4, 'Drafts', () {
+                  // Implement drafts functionality
+                }),
+                _buildOptionButton(Icons.photo, 'Photos', () {
+                  _filterAssets(AssetType.image);
+                }),
+                _buildOptionButton(Icons.play_circle_outline, 'Videos', () {
+                  _filterAssets(AssetType.video);
+                }),
               ],
             ),
           ),
@@ -201,21 +264,25 @@ class _StoryCreationPageState extends State<StoryCreationPage> {
     );
   }
 
-  Widget _buildOptionButton(IconData icon, String label) {
-    return Column(
-      children: [
-        Container(
-          width: 60,
-          height: 60,
-          decoration: BoxDecoration(
-            color: Colors.grey[800],
-            borderRadius: BorderRadius.circular(12),
+  Widget _buildOptionButton(
+      IconData icon, String label, VoidCallback onPressed) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: Colors.grey[800],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: Colors.white, size: 30),
           ),
-          child: Icon(icon, color: Colors.white, size: 30),
-        ),
-        SizedBox(height: 8),
-        Text(label, style: TextStyle(color: Colors.white)),
-      ],
+          SizedBox(height: 8),
+          Text(label, style: TextStyle(color: Colors.white)),
+        ],
+      ),
     );
   }
 }

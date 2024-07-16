@@ -5,10 +5,10 @@ import 'package:image_picker/image_picker.dart';
 
 import '../coscreens/profile_home_edit.dart';
 import 'anime_chat.dart';
+import 'bottom_nav_bar.dart'; // Import the BottomNavBar widget
 import 'circle_screen.dart';
 import 'home_screen.dart';
 import 'settings_page.dart'; // Import the settings page
-import 'bottom_nav_bar.dart'; // Import the BottomNavBar widget
 
 class ProfileHome extends StatefulWidget {
   @override

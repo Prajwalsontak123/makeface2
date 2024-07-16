@@ -1,13 +1,26 @@
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:makeface2/screens/anime_chat.dart';
-import 'package:makeface2/screens/circle_profile.dart';
 import 'package:makeface2/screens/circle_screen.dart';
-import 'package:makeface2/screens/profile_home.dart';
+
 import '../coscreens/home_searchbar.dart';
 import 'story_creation_page.dart';
 import 'bottom_nav_bar.dart';
 
 class HomeScreen extends StatelessWidget {
+  Future<bool> hasStory(String userId) async {
+    final storageRef = FirebaseStorage.instance.ref();
+    final storyRef = storageRef.child('stories/$userId');
+
+    try {
+      final ListResult result = await storyRef.listAll();
+      return result.items.isNotEmpty;
+    } catch (e) {
+      print('Error checking for story: $e');
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -56,7 +69,8 @@ class HomeScreen extends StatelessWidget {
                       if (index == 0) {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => StoryCreationPage()),
+                          MaterialPageRoute(
+                              builder: (context) => StoryCreationPage()),
                         );
                       } else {
                         // Handle story viewing
@@ -165,33 +179,27 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 0, // Set the current index to 0 (HomeScreen)
+        currentIndex: 0,
         onTap: (index) {
-          // Navigate to the corresponding screen based on the tapped index
           switch (index) {
             case 0:
-              // Do nothing, already in HomeScreen
               break;
             case 1:
-              // Navigate to AnimeChatScreen
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => AnimeChatScreen()),
               );
               break;
             case 2:
-              // Navigate to CircleScreen
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => CircleScreen()),
               );
               break;
             case 3:
-              // Show dialog box when "Add Post" icon is tapped
               _showAddPostOptions(context);
               break;
             case 4:
-              // Navigate to CircleProfile
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => ProfileHome()),
@@ -216,7 +224,6 @@ class HomeScreen extends StatelessWidget {
                 leading: Icon(Icons.add_a_photo),
                 title: Text('Camera'),
                 onTap: () {
-                  // Handle camera option
                   Navigator.pop(context);
                 },
               ),
@@ -224,7 +231,6 @@ class HomeScreen extends StatelessWidget {
                 leading: Icon(Icons.insert_drive_file),
                 title: Text('Local Storage'),
                 onTap: () {
-                  // Handle local storage option
                   Navigator.pop(context);
                 },
               ),
