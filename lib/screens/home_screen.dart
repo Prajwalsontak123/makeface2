@@ -1,13 +1,27 @@
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:makeface2/screens/anime_chat.dart';
-import 'package:makeface2/screens/circle_profile.dart';
 import 'package:makeface2/screens/circle_screen.dart';
+import 'package:makeface2/screens/profile_home.dart';
 
 import '../coscreens/home_searchbar.dart';
 import 'bottom_nav_bar.dart';
 import 'story_creation_page.dart';
 
 class HomeScreen extends StatelessWidget {
+  Future<bool> hasStory(String userId) async {
+    final storageRef = FirebaseStorage.instance.ref();
+    final storyRef = storageRef.child('stories/$userId');
+
+    try {
+      final ListResult result = await storyRef.listAll();
+      return result.items.isNotEmpty;
+    } catch (e) {
+      print('Error checking for story: $e');
+      return false;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,54 +65,85 @@ class HomeScreen extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 itemCount: 10,
                 itemBuilder: (BuildContext context, int index) {
-                  return GestureDetector(
-                    onTap: () {
-                      if (index == 0) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => StoryCreationPage()),
-                        );
-                      } else {
-                        // Handle story viewing
-                      }
-                    },
-                    child: Container(
-                      margin: EdgeInsets.symmetric(horizontal: 5.0),
-                      child: Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 35.0,
-                            backgroundColor: index == 0
-                                ? Colors.blue
-                                : const Color.fromARGB(255, 173, 175, 177),
-                            child: index == 0
-                                ? SizedBox.shrink()
-                                : Text(
-                                    '${index + 1}',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                          ),
-                          if (index == 0)
-                            Positioned(
-                              bottom: 25,
-                              right: 2,
-                              child: Container(
-                                padding: EdgeInsets.all(2),
+                  return FutureBuilder<bool>(
+                    future: index == 0
+                        ? Future.value(false)
+                        : hasStory('user_$index'),
+                    builder: (context, snapshot) {
+                      bool hasActiveStory = snapshot.data ?? false;
+                      return GestureDetector(
+                        onTap: () {
+                          if (index == 0) {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => StoryCreationPage()),
+                            );
+                          } else {
+                            // Handle story viewing
+                          }
+                        },
+                        child: Container(
+                          margin: EdgeInsets.symmetric(horizontal: 5.0),
+                          child: Stack(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(3),
                                 decoration: BoxDecoration(
-                                  color: Colors.blue,
                                   shape: BoxShape.circle,
+                                  gradient: hasActiveStory
+                                      ? LinearGradient(
+                                          colors: [
+                                            Colors.purple,
+                                            Colors.pink,
+                                            Colors.orange
+                                          ],
+                                          begin: Alignment.topLeft,
+                                          end: Alignment.bottomRight,
+                                        )
+                                      : null,
                                 ),
-                                child: Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: 23,
+                                child: CircleAvatar(
+                                  radius: 32.0,
+                                  backgroundColor: Colors.white,
+                                  child: CircleAvatar(
+                                    radius: 30.0,
+                                    backgroundColor: index == 0
+                                        ? Colors.blue
+                                        : const Color.fromARGB(
+                                            255, 173, 175, 177),
+                                    child: index == 0
+                                        ? SizedBox.shrink()
+                                        : Text(
+                                            '${index + 1}',
+                                            style:
+                                                TextStyle(color: Colors.white),
+                                          ),
+                                  ),
                                 ),
                               ),
-                            ),
-                        ],
-                      ),
-                    ),
+                              if (index == 0)
+                                Positioned(
+                                  bottom: 0,
+                                  right: 0,
+                                  child: Container(
+                                    padding: EdgeInsets.all(2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(
+                                      Icons.add,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -166,36 +211,30 @@ class HomeScreen extends StatelessWidget {
         ),
       ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 0, // Set the current index to 0 (HomeScreen)
+        currentIndex: 0,
         onTap: (index) {
-          // Navigate to the corresponding screen based on the tapped index
           switch (index) {
             case 0:
-              // Do nothing, already in HomeScreen
               break;
             case 1:
-              // Navigate to AnimeChatScreen
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => AnimeChatScreen()),
               );
               break;
             case 2:
-              // Navigate to CircleScreen
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(builder: (context) => CircleScreen()),
               );
               break;
             case 3:
-              // Show dialog box when "Add Post" icon is tapped
               _showAddPostOptions(context);
               break;
             case 4:
-              // Navigate to CircleProfile
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => CircleProfile()),
+                MaterialPageRoute(builder: (context) => ProfileHome()),
               );
               break;
           }
@@ -217,7 +256,6 @@ class HomeScreen extends StatelessWidget {
                 leading: Icon(Icons.add_a_photo),
                 title: Text('Camera'),
                 onTap: () {
-                  // Handle camera option
                   Navigator.pop(context);
                 },
               ),
@@ -225,7 +263,6 @@ class HomeScreen extends StatelessWidget {
                 leading: Icon(Icons.insert_drive_file),
                 title: Text('Local Storage'),
                 onTap: () {
-                  // Handle local storage option
                   Navigator.pop(context);
                 },
               ),
