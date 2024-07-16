@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:makeface2/screens/anime_chat.dart';
 import 'package:makeface2/screens/circle_profile.dart';
 import 'package:makeface2/screens/circle_screen.dart';
+import 'package:makeface2/screens/profile_home.dart';
 import '../coscreens/home_searchbar.dart';
 import 'story_creation_page.dart';
 import 'bottom_nav_bar.dart';
@@ -193,7 +194,7 @@ class HomeScreen extends StatelessWidget {
               // Navigate to CircleProfile
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => CircleProfile()),
+                MaterialPageRoute(builder: (context) => ProfileHome()),
               );
               break;
           }
