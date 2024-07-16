@@ -49,7 +49,7 @@ class YourStory {
       // Navigate back to HomeScreen after saving
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => HomeScreen()),
+        MaterialPageRoute(builder: (context) => HomeScreen(userHasStory: true)),
       );
     } catch (e) {
       print('Error saving story: $e');
