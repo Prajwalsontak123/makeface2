@@ -23,7 +23,8 @@ class StorySection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100.0,
+      height:
+          120.0, // Increase the height of the container to accommodate larger avatars
       margin: EdgeInsets.symmetric(vertical: 10.0),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
@@ -51,8 +52,14 @@ class StorySection extends StatelessWidget {
                   margin: EdgeInsets.symmetric(horizontal: 5.0),
                   child: Stack(
                     children: [
+                      if (hasActiveStory)
+                        Positioned.fill(
+                          child:
+                              AnimatedGradientCircle(), // Use AnimatedGradientCircle here
+                        ),
                       Container(
-                        padding: EdgeInsets.all(3),
+                        padding: EdgeInsets.all(
+                            4), // Adjust padding for larger circle
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           gradient: hasActiveStory
@@ -68,10 +75,12 @@ class StorySection extends StatelessWidget {
                               : null,
                         ),
                         child: CircleAvatar(
-                          radius: 32.0,
+                          radius:
+                              38.0, // Increase the radius of the outer circle
                           backgroundColor: Colors.white,
                           child: CircleAvatar(
-                            radius: 30.0,
+                            radius:
+                                36.0, // Increase the radius of the inner circle
                             backgroundColor: index == 0
                                 ? Colors.blue
                                 : const Color.fromARGB(255, 173, 175, 177),
@@ -89,7 +98,8 @@ class StorySection extends StatelessWidget {
                           bottom: 0,
                           right: 0,
                           child: Container(
-                            padding: EdgeInsets.all(2),
+                            padding: EdgeInsets.all(
+                                3), // Adjust padding for larger add icon
                             decoration: BoxDecoration(
                               color: Colors.blue,
                               shape: BoxShape.circle,
@@ -97,7 +107,7 @@ class StorySection extends StatelessWidget {
                             child: Icon(
                               Icons.add,
                               color: Colors.white,
-                              size: 20,
+                              size: 22, // Increase the size of the add icon
                             ),
                           ),
                         ),
@@ -110,5 +120,78 @@ class StorySection extends StatelessWidget {
         },
       ),
     );
+  }
+}
+
+class AnimatedGradientCircle extends StatefulWidget {
+  @override
+  _AnimatedGradientCircleState createState() => _AnimatedGradientCircleState();
+}
+
+class _AnimatedGradientCircleState extends State<AnimatedGradientCircle>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return CustomPaint(
+          painter: GradientCirclePainter(_controller.value),
+          child: SizedBox(
+            width: 90,
+            height: 90,
+          ), // Increase the size of the custom paint area
+        );
+      },
+    );
+  }
+}
+
+class GradientCirclePainter extends CustomPainter {
+  final double animationValue;
+
+  GradientCirclePainter(this.animationValue);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final radius = size.width / 2;
+    final gradient = SweepGradient(
+      colors: [
+        Colors.blue,
+        Colors.red,
+        Colors.yellow,
+        Colors.green,
+        Colors.blue
+      ],
+      stops: [0.0, 0.25, 0.5, 0.75, 1.0],
+      transform: GradientRotation(animationValue * 2 * 3.1415926535897932),
+    );
+    final paint = Paint()
+      ..shader = gradient.createShader(
+          Rect.fromCircle(center: Offset(radius, radius), radius: radius));
+
+    canvas.drawCircle(Offset(radius, radius), radius, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) {
+    return true;
   }
 }

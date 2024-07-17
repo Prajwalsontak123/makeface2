@@ -41,6 +41,7 @@ dependencies:
   image_cropper: ^7.1.0
   image: ^4.0.14
   photo_manager: ^3.2.1
+  percent_indicator: ^4.2.3
 
 dev_dependencies:
   flutter_test:
