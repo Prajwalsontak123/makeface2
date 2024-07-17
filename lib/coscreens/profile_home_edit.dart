@@ -56,7 +56,14 @@ class _ProfileHomeEditState extends State<ProfileHomeEdit> {
 
   Future<String?> _uploadImage(XFile image) async {
     try {
-      Reference storageReference = FirebaseStorage.instance
+      final uniqueName = _uniqueNameController.text;
+      if (uniqueName.isEmpty) {
+        print("Unique name is empty. Cannot upload image.");
+        return null;
+      }
+
+      final fileName = DateTime.now().millisecondsSinceEpoch.toString();
+      final storageReference = FirebaseStorage.instance
           .ref()
           .child('profile_photos/$uniqueName/$fileName'); // Adjusted path
       UploadTask uploadTask = storageReference.putFile(File(image.path));

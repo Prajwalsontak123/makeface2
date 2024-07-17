@@ -42,6 +42,8 @@ dependencies:
   image: ^4.0.14
   photo_manager: ^3.2.1
 
+  # No new dependencies needed to be added for the view_story.dart implementation
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

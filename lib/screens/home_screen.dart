@@ -1,26 +1,12 @@
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:makeface2/screens/anime_chat.dart';
 import 'package:makeface2/screens/circle_screen.dart';
-
+import 'package:makeface2/screens/profile_home.dart';
+import 'package:makeface2/screens/story_section.dart';
 import '../coscreens/home_searchbar.dart';
-import 'story_creation_page.dart';
 import 'bottom_nav_bar.dart';
 
 class HomeScreen extends StatelessWidget {
-  Future<bool> hasStory(String userId) async {
-    final storageRef = FirebaseStorage.instance.ref();
-    final storyRef = storageRef.child('stories/$userId');
-
-    try {
-      final ListResult result = await storyRef.listAll();
-      return result.items.isNotEmpty;
-    } catch (e) {
-      print('Error checking for story: $e');
-      return false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,65 +43,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Container(
-              height: 100.0,
-              margin: EdgeInsets.symmetric(vertical: 10.0),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: 10,
-                itemBuilder: (BuildContext context, int index) {
-                  return GestureDetector(
-                    onTap: () {
-                      if (index == 0) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => StoryCreationPage()),
-                        );
-                      } else {
-                        // Handle story viewing
-                      }
-                    },
-                    child: Container(
-                      margin: EdgeInsets.symmetric(horizontal: 5.0),
-                      child: Stack(
-                        children: [
-                          CircleAvatar(
-                            radius: 35.0,
-                            backgroundColor: index == 0
-                                ? Colors.blue
-                                : const Color.fromARGB(255, 173, 175, 177),
-                            child: index == 0
-                                ? SizedBox.shrink()
-                                : Text(
-                                    '${index + 1}',
-                                    style: TextStyle(color: Colors.white),
-                                  ),
-                          ),
-                          if (index == 0)
-                            Positioned(
-                              bottom: 25,
-                              right: 2,
-                              child: Container(
-                                padding: EdgeInsets.all(2),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue,
-                                  shape: BoxShape.circle,
-                                ),
-                                child: Icon(
-                                  Icons.add,
-                                  color: Colors.white,
-                                  size: 23,
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
+            StorySection(), // Include the story section
             ListView.builder(
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),
