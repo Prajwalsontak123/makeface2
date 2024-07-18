@@ -3,23 +3,14 @@ import 'package:makeface2/coscreens/home_searchbar.dart';
 import 'package:makeface2/screens/anime_chat.dart';
 import 'package:makeface2/screens/circle_screen.dart';
 import 'package:makeface2/screens/profile_home.dart';
+import 'package:makeface2/screens/story_section.dart';
 
-import '../coscreens/home_searchbar.dart';
 import 'bottom_nav_bar.dart';
 
 class HomeScreen extends StatelessWidget {
-  Future<bool> hasStory(String userId) async {
-    final storageRef = FirebaseStorage.instance.ref();
-    final storyRef = storageRef.child('stories/$userId');
+  final bool userHasStory;
 
-    try {
-      final ListResult result = await storyRef.listAll();
-      return result.items.isNotEmpty;
-    } catch (e) {
-      print('Error checking for story: $e');
-      return false;
-    }
-  }
+  HomeScreen({this.userHasStory = false});
 
   @override
   Widget build(BuildContext context) {
@@ -57,96 +48,7 @@ class HomeScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Container(
-              height: 100.0,
-              margin: EdgeInsets.symmetric(vertical: 10.0),
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: 10,
-                itemBuilder: (BuildContext context, int index) {
-                  return FutureBuilder<bool>(
-                    future: index == 0
-                        ? Future.value(false)
-                        : hasStory('user_$index'),
-                    builder: (context, snapshot) {
-                      bool hasActiveStory = snapshot.data ?? false;
-                      return GestureDetector(
-                        onTap: () {
-                          if (index == 0) {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => StoryCreationPage()),
-                            );
-                          } else {
-                            // Handle story viewing
-                          }
-                        },
-                        child: Container(
-                          margin: EdgeInsets.symmetric(horizontal: 5.0),
-                          child: Stack(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(3),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  gradient: hasActiveStory
-                                      ? LinearGradient(
-                                          colors: [
-                                            Colors.purple,
-                                            Colors.pink,
-                                            Colors.orange
-                                          ],
-                                          begin: Alignment.topLeft,
-                                          end: Alignment.bottomRight,
-                                        )
-                                      : null,
-                                ),
-                                child: CircleAvatar(
-                                  radius: 32.0,
-                                  backgroundColor: Colors.white,
-                                  child: CircleAvatar(
-                                    radius: 30.0,
-                                    backgroundColor: index == 0
-                                        ? Colors.blue
-                                        : const Color.fromARGB(
-                                            255, 173, 175, 177),
-                                    child: index == 0
-                                        ? SizedBox.shrink()
-                                        : Text(
-                                            '${index + 1}',
-                                            style:
-                                                TextStyle(color: Colors.white),
-                                          ),
-                                  ),
-                                ),
-                              ),
-                              if (index == 0)
-                                Positioned(
-                                  bottom: 0,
-                                  right: 0,
-                                  child: Container(
-                                    padding: EdgeInsets.all(2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(
-                                      Icons.add,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
-            ),
+            StorySection(userHasStory: userHasStory),
             ListView.builder(
               shrinkWrap: true,
               physics: NeverScrollableScrollPhysics(),

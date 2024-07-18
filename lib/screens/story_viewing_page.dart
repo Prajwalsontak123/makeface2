@@ -7,9 +7,9 @@ import 'package:percent_indicator/linear_percent_indicator.dart';
 import 'package:video_player/video_player.dart';
 
 class StoryViewingPage extends StatefulWidget {
-  final Function onStoriesCompleted;
+  final int storyIndex;
 
-  StoryViewingPage({required this.onStoriesCompleted, required String userId});
+  StoryViewingPage({required this.storyIndex});
 
   @override
   _StoryViewingPageState createState() => _StoryViewingPageState();
@@ -63,10 +63,11 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
 
       setState(() {
         storyUrls = urls;
+        currentStoryIndex = widget.storyIndex;
       });
 
       if (storyUrls.isNotEmpty) {
-        _loadStory(0);
+        _loadStory(widget.storyIndex);
       }
     } catch (e) {
       print('Error fetching story data: $e');
@@ -74,11 +75,7 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
   }
 
   void _loadStory(int index) {
-    if (index < 0 || index >= storyUrls.length) {
-      widget.onStoriesCompleted();
-      Navigator.pop(context);
-      return;
-    }
+    if (index < 0 || index >= storyUrls.length) return;
 
     setState(() {
       currentStoryIndex = index;
@@ -92,6 +89,9 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
           _videoController?.play();
         });
     }
+
+    // Mark story as viewed if needed
+    // This is where you can implement logic to mark stories as viewed
   }
 
   @override
@@ -117,15 +117,18 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
               },
               child: Stack(
                 children: [
+                  // Story Content
                   Positioned.fill(
                     child: _buildStoryContent(),
                   ),
+                  // Top Section
                   Positioned(
                     top: 40,
                     left: 16,
                     right: 16,
                     child: Column(
                       children: [
+                        // Progress Bars
                         Row(
                           children: List.generate(
                             storyUrls.length,
@@ -177,6 +180,7 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
                       ],
                     ),
                   ),
+                  // Bottom Actions
                   Positioned(
                     bottom: 16,
                     left: 16,
