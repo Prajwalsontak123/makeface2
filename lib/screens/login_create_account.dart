@@ -13,6 +13,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   TextEditingController _nameController = TextEditingController();
+  TextEditingController _uniqueNameController = TextEditingController();
   TextEditingController _emailController = TextEditingController();
   TextEditingController _phoneController = TextEditingController();
   TextEditingController _passwordController = TextEditingController();
@@ -40,10 +41,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
       await _firestore.collection('users').doc(userCredential.user!.uid).set({
         'name': _nameController.text,
+        'unique_name': _uniqueNameController.text,
         'email': _emailController.text,
         'phone': _phoneController.text,
         'birthday': _birthdayController.text,
-        'password': _passwordController.text, // Add password field
+        'password': _passwordController.text,
       });
 
       print("Account created successfully!");
@@ -131,6 +133,17 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   validator: (value) {
                     if (value == null || value.isEmpty) {
                       return 'Please enter your name';
+                    }
+                    return null;
+                  },
+                ),
+                SizedBox(height: 10),
+                _buildInputField(
+                  labelText: 'Unique Name',
+                  controller: _uniqueNameController,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a unique name';
                     }
                     return null;
                   },

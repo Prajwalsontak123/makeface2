@@ -3,10 +3,16 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
+import 'package:makeface2/screens/shared_preferences_service.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 
 class StoryViewingPage extends StatefulWidget {
+  final int storyIndex;
+
+  StoryViewingPage({required this.storyIndex});
+
   @override
   _StoryViewingPageState createState() => _StoryViewingPageState();
 }
@@ -73,7 +79,17 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
 
   void _loadStory(int index) {
     if (index < 0 || index >= storyUrls.length) {
-      _navigateToHome();
+      // All stories have been viewed
+      setState(() {
+        _allStoriesViewed = true;
+      });
+
+      _saveViewedState();
+
+      // Navigate back to story section automatically
+      Future.delayed(Duration(seconds: 2), () {
+        Navigator.pop(context);
+      });
       return;
     }
 
@@ -90,24 +106,20 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
         });
     }
 
-    // Check if all stories are viewed
-    if (index == storyUrls.length - 1) {
-      setState(() {
-        _allStoriesViewed = true;
-      });
-      Future.delayed(Duration(seconds: 3), () {
-        _navigateToHome();
-      });
-    }
+    // Mark story as viewed
+    SharedPreferencesService.markStoryAsViewed(index);
   }
 
-  void _navigateToHome() {
-    Navigator.of(context).pop(_allStoriesViewed);
+  void _saveViewedState() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool allViewed = currentStoryIndex >= storyUrls.length - 1;
+    prefs.setBool('all_stories_viewed', allViewed);
   }
 
   @override
   void dispose() {
     _videoController?.dispose();
+    _saveViewedState();
     super.dispose();
   }
 
@@ -129,11 +141,9 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
               child: Stack(
                 children: [
                   // Story Content
-                  // Story Content
                   Positioned.fill(
                     child: _buildStoryContent(),
                   ),
-                  // Top Section
                   // Top Section
                   Positioned(
                     top: 40,
@@ -141,7 +151,6 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
                     right: 16,
                     child: Column(
                       children: [
-                        // Progress Bars
                         // Progress Bars
                         Row(
                           children: List.generate(
@@ -195,7 +204,6 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
                     ),
                   ),
                   // Bottom Actions
-                  // Bottom Actions
                   Positioned(
                     bottom: 16,
                     left: 16,
@@ -210,6 +218,13 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
                       ],
                     ),
                   ),
+                  if (_allStoriesViewed)
+                    Center(
+                      child: Text(
+                        'All stories viewed',
+                        style: TextStyle(color: Colors.white, fontSize: 20),
+                      ),
+                    ),
                 ],
               ),
             ),

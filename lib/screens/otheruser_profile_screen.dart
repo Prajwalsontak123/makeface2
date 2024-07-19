@@ -68,14 +68,14 @@ class OtherUserProfileScreen extends StatelessWidget {
             children: [
               Text('2000',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-              Text('Followers'),
+              Text('Fans'),
             ],
           ),
           Column(
             children: [
               Text('180',
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-              Text('Following'),
+              Text('Supporting'),
             ],
           ),
         ],
