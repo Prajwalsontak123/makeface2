@@ -50,18 +50,24 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (userCredential.user != null) {
-        // Update loggedin_users collection
+        final uid = userCredential.user!.uid;
+
+        // Check if user exists in 'users' collection
         final userDoc = await _firestore
-            .collection('loggedin_users')
-            .where('email_id', isEqualTo: email)
-            .limit(1)
+            .collection('users')
+            .doc(uid)
             .get();
 
-        if (userDoc.docs.isNotEmpty) {
-          await userDoc.docs.first.reference.update({
-            'last_login_at':
-                FieldValue.serverTimestamp(), // Update last login timestamp
-          });
+        if (userDoc.exists) {
+          // User exists, update or create in 'loggedin_users' collection
+          final userData = userDoc.data()!;
+          
+          final loggedInUserDoc = _firestore.collection('loggedin_users').doc(uid);
+
+          await loggedInUserDoc.set({
+            ...userData,
+            'last_login_at': FieldValue.serverTimestamp(), // Update last login timestamp
+          }, SetOptions(merge: true));
 
           Navigator.pushReplacement(
             context,
@@ -69,7 +75,7 @@ class _LoginPageState extends State<LoginPage> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Invalid credentials')),
+            SnackBar(content: Text('User not found in the users collection')),
           );
         }
       } else {

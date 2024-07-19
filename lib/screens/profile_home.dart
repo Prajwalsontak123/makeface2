@@ -20,7 +20,9 @@ class _ProfileHomeState extends State<ProfileHome> {
   late String _userName = ''; // Added userName field
   late String _userId;
   late String _fetchedBio = '';
-  String _profileImageUrl = '';
+  late String _profileImageUrl = '';
+  late String _fansCount = '0'; // Initialize fans count
+  late String _supportingCount = '0'; // Initialize supporting count
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -37,19 +39,38 @@ class _ProfileHomeState extends State<ProfileHome> {
         _userId = user.uid;
 
         // Fetch user data from loggedin_users collection based on user ID
-        DocumentSnapshot<Map<String, dynamic>> userSnapshot =
-            await FirebaseFirestore.instance
-                .collection('loggedin_users')
-                .doc(user.uid)
-                .get();
+        DocumentReference<Map<String, dynamic>> userDocRef =
+            FirebaseFirestore.instance.collection('loggedin_users').doc(user.uid);
+        DocumentSnapshot<Map<String, dynamic>> userSnapshot = await userDocRef.get();
 
         if (userSnapshot.exists) {
+          final data = userSnapshot.data() ?? {};
+
+          // Check if 'fans' and 'supporting' fields exist; if not, initialize them
+          if (data['fans'] == null) {
+            await userDocRef.update({'fans': []});
+          }
+          if (data['supporting'] == null) {
+            await userDocRef.update({'supporting': []});
+          }
+
+          // Fetch user data again after ensuring fields exist
+          DocumentSnapshot<Map<String, dynamic>> updatedUserSnapshot = await userDocRef.get();
+          final updatedData = updatedUserSnapshot.data() ?? {};
+
           setState(() {
-            _uniqueName = userSnapshot.data()?['unique_name'] ?? '';
-            _userName =
-                userSnapshot.data()?['username'] ?? ''; // Fetch username
-            _fetchedBio = userSnapshot.data()?['bio'] ?? '';
-            _profileImageUrl = userSnapshot.data()?['profile_image'] ?? '';
+            _uniqueName = updatedData['unique_name'] ?? '';
+            _userName = updatedData['username'] ?? ''; // Fetch username
+            _fetchedBio = updatedData['bio'] ?? '';
+            _profileImageUrl = updatedData['profile_image'] ?? '';
+            
+            // Check if 'fans' and 'supporting' fields exist and get their counts
+            _fansCount = (updatedData['fans'] as List<dynamic>?)?.length.toString() ?? '0';
+            _supportingCount = (updatedData['supporting'] as List<dynamic>?)?.length.toString() ?? '0';
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'User data not found.';
           });
         }
 
@@ -58,7 +79,6 @@ class _ProfileHomeState extends State<ProfileHome> {
           _isLoading = false;
         });
       } else {
-        // Handle case where user is null
         setState(() {
           _errorMessage = 'User not logged in.';
           _isLoading = false;
@@ -155,8 +175,8 @@ class _ProfileHomeState extends State<ProfileHome> {
                                         MainAxisAlignment.spaceEvenly,
                                     children: [
                                       _buildStatColumn("Posts", "20"),
-                                      _buildStatColumn("Followers", "2.3m"),
-                                      _buildStatColumn("Following", "2.0k"),
+                                      _buildStatColumn("Fans", _fansCount),
+                                      _buildStatColumn("Supporting", _supportingCount),
                                     ],
                                   ),
                                   SizedBox(height: 10.0),
@@ -291,10 +311,10 @@ class _ProfileHomeState extends State<ProfileHome> {
                 },
               ),
               ListTile(
-                leading: Icon(Icons.insert_drive_file),
-                title: Text('Local Storage'),
+                leading: Icon(Icons.add_photo_alternate),
+                title: Text('Gallery'),
                 onTap: () {
-                  _openLocalStorage(context);
+                  _openGallery(context);
                   Navigator.pop(context); // Close the dialog
                 },
               ),
@@ -305,19 +325,22 @@ class _ProfileHomeState extends State<ProfileHome> {
     );
   }
 
-  void _openCamera(BuildContext context) async {
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: ImageSource.camera);
-    if (pickedImage != null) {
-      // Handle the picked image
-    }
+ void _openCamera(BuildContext context) async {
+  final picker = ImagePicker();
+  final pickedFile = await picker.pickImage(source: ImageSource.camera);
+  if (pickedFile != null) {
+    // Handle camera image
+    // You can access the file using pickedFile.path
   }
+}
 
-  void _openLocalStorage(BuildContext context) async {
-    final picker = ImagePicker();
-    final pickedImage = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedImage != null) {
-      // Handle the picked image
-    }
+void _openGallery(BuildContext context) async {
+  final picker = ImagePicker();
+  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+  if (pickedFile != null) {
+    // Handle gallery image
+    // You can access the file using pickedFile.path
   }
+}
+
 }

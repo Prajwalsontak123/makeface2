@@ -1,16 +1,150 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class OtherUserProfileScreen extends StatelessWidget {
+class OtherUserProfileScreen extends StatefulWidget {
   final String username;
   final String profileImage;
   final String bio;
+  final String otherUserUniqueName;
 
   const OtherUserProfileScreen({
     required this.username,
     required this.profileImage,
     required this.bio,
+    required this.otherUserUniqueName,
   });
+
+  @override
+  _OtherUserProfileScreenState createState() => _OtherUserProfileScreenState();
+}
+
+class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
+  bool isSupporting = false;
+  late String currentUserUniqueName;
+  late String currentUserId;
+  int fansCount = 0;
+  int supportingCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    checkIfSupporting();
+    fetchCounts();
+  }
+
+  Future<void> checkIfSupporting() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentSnapshot currentUserSnapshot = await FirebaseFirestore.instance
+          .collection('loggedin_users')
+          .doc(user.uid)
+          .get();
+
+      currentUserUniqueName = currentUserSnapshot['unique_name'];
+      currentUserId = user.uid;
+
+      List supportingList = currentUserSnapshot['supporting'] ?? [];
+      if (supportingList.contains(widget.otherUserUniqueName)) {
+        setState(() {
+          isSupporting = true;
+        });
+      }
+    }
+  }
+
+ Future<void> fetchCounts() async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    try {
+      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+          .collection('loggedin_users')
+          .where('unique_name', isEqualTo: widget.otherUserUniqueName)
+          .limit(1)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        DocumentReference otherUserRef = querySnapshot.docs.first.reference;
+        DocumentSnapshot otherUserSnapshot = await otherUserRef.get();
+
+        // Ensure the fields exist
+        Map<String, dynamic> data = otherUserSnapshot.data() as Map<String, dynamic>;
+
+        // Check if the fields exist, if not initialize them
+        if (!data.containsKey('fans') || !data.containsKey('supporting')) {
+          await FirebaseFirestore.instance
+              .collection('loggedin_users')
+              .doc(otherUserRef.id)
+              .set({
+            'fans': [],
+            'supporting': [],
+          }, SetOptions(merge: true));
+        }
+
+        // After ensuring the fields are initialized, fetch the counts
+        DocumentSnapshot updatedSnapshot = await otherUserRef.get();
+        List fansList = updatedSnapshot['fans'] ?? [];
+        List supportingList = updatedSnapshot['supporting'] ?? [];
+
+        setState(() {
+          fansCount = fansList.length;
+          supportingCount = supportingList.length;
+        });
+      } else {
+        throw Exception("Other user not found");
+      }
+    } catch (e) {
+      print('Error fetching counts: $e');
+    }
+  }
+}
+
+
+  Future<void> toggleSupport() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      DocumentReference currentUserRef =
+          FirebaseFirestore.instance.collection('loggedin_users').doc(user.uid);
+
+      DocumentReference otherUserRef = await FirebaseFirestore.instance
+          .collection('loggedin_users')
+          .where('unique_name', isEqualTo: widget.otherUserUniqueName)
+          .limit(1)
+          .get()
+          .then((QuerySnapshot snapshot) {
+            if (snapshot.docs.isNotEmpty) {
+              return snapshot.docs.first.reference;
+            } else {
+              throw Exception("Other user not found");
+            }
+          });
+
+      await FirebaseFirestore.instance.runTransaction((transaction) async {
+        DocumentSnapshot currentUserSnapshot = await transaction.get(currentUserRef);
+        DocumentSnapshot otherUserSnapshot = await transaction.get(otherUserRef);
+
+        List currentUserSupporting = List.from(currentUserSnapshot['supporting'] ?? []);
+        List otherUserFans = List.from(otherUserSnapshot['fans'] ?? []);
+
+        if (isSupporting) {
+          currentUserSupporting.remove(widget.otherUserUniqueName);
+          otherUserFans.remove(currentUserUniqueName);
+        } else {
+          currentUserSupporting.add(widget.otherUserUniqueName);
+          otherUserFans.add(currentUserUniqueName);
+        }
+
+        transaction.update(currentUserRef, {'supporting': currentUserSupporting});
+        transaction.update(otherUserRef, {'fans': otherUserFans});
+      });
+
+      setState(() {
+        isSupporting = !isSupporting;
+        fetchCounts();
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +152,7 @@ class OtherUserProfileScreen extends StatelessWidget {
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: Text(username),
+          title: Text(widget.username),
           actions: [
             IconButton(
               icon: Icon(Icons.notifications_none),
@@ -32,11 +166,11 @@ class OtherUserProfileScreen extends StatelessWidget {
         ),
         body: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start, // Align children to the left
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildProfileHeader(profileImage),
-              _buildProfileDetails(username, bio), // Moved to top
+              _buildProfileHeader(widget.profileImage),
+              _buildProfileDetails(widget.username, widget.bio),
+              _buildSupportButton(),
               _buildTabBar(),
               _buildTabView(),
             ],
@@ -66,16 +200,16 @@ class OtherUserProfileScreen extends StatelessWidget {
           ),
           Column(
             children: [
-              Text('2000',
+              Text(fansCount.toString(),
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-              Text('Followers'),
+              Text('Fans'),
             ],
           ),
           Column(
             children: [
-              Text('180',
+              Text(supportingCount.toString(),
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-              Text('Following'),
+              Text('Supporting'),
             ],
           ),
         ],
@@ -87,8 +221,7 @@ class OtherUserProfileScreen extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start, // Align children to the left
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(username, style: TextStyle(fontWeight: FontWeight.bold)),
           SizedBox(height: 4),
@@ -96,6 +229,16 @@ class OtherUserProfileScreen extends StatelessWidget {
           SizedBox(height: 4),
           Text('Link goes here', style: TextStyle(color: Colors.blue)),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSupportButton() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+      child: ElevatedButton(
+        onPressed: toggleSupport,
+        child: Text(isSupporting ? 'Supporting' : 'Support'),
       ),
     );
   }
@@ -115,7 +258,7 @@ class OtherUserProfileScreen extends StatelessWidget {
 
   Widget _buildTabView() {
     return Container(
-      height: 400, // Adjust the height as needed
+      height: 400,
       child: TabBarView(
         children: [
           _buildGrid(),
@@ -131,8 +274,7 @@ class OtherUserProfileScreen extends StatelessWidget {
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: 30,
-      gridDelegate:
-          SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
       itemBuilder: (context, index) {
         return CachedNetworkImage(
           imageUrl: 'https://via.placeholder.com/150',
