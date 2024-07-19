@@ -62,11 +62,8 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
   }
 
   Future<void> _getSearchResults(String query) async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('loggedin_users')
-        .where('username', isGreaterThanOrEqualTo: query.toLowerCase())
-        .where('username', isLessThanOrEqualTo: query.toLowerCase() + '\uf8ff')
-        .get();
+    QuerySnapshot querySnapshot =
+        await FirebaseFirestore.instance.collection('loggedin_users').get();
 
     setState(() {
       _searchResults = querySnapshot.docs.map((doc) {
@@ -75,7 +72,8 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
           'profile_image':
               doc.get('profile_image') ?? 'https://via.placeholder.com/150',
           'bio': doc.get('bio') ?? '',
-          'unique_name': doc.get('unique_name').toString(),
+          'unique_name':
+              doc.get('unique_name').toString(), // Added unique_name field
         };
       }).toList();
     });
@@ -148,7 +146,7 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                                       ['profile_image'],
                                   bio: _searchResults[index]['bio'],
                                   otherUserUniqueName: _searchResults[index]
-                                      ['unique_name'],
+                                      ['unique_name'], // Pass unique_name
                                 ),
                               ),
                             );
@@ -218,7 +216,8 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                         }
 
                         final doc = snapshot.data!.docs.first;
-                        final profileImage = doc.get('profile_image') ??
+                        final profileImage = (doc.data()
+                                as Map<String, dynamic>)['profile_image'] ??
                             'https://via.placeholder.com/150';
 
                         return CircleAvatar(
@@ -255,14 +254,8 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
 
   Widget _buildSuggestionsList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('loggedin_users')
-          .where('username',
-              isGreaterThanOrEqualTo: _searchController.text.toLowerCase())
-          .where('username',
-              isLessThanOrEqualTo:
-                  _searchController.text.toLowerCase() + '\uf8ff')
-          .snapshots(),
+      stream:
+          FirebaseFirestore.instance.collection('loggedin_users').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Center(
@@ -276,7 +269,8 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
             'profile_image':
                 doc.get('profile_image') ?? 'https://via.placeholder.com/150',
             'bio': doc.get('bio') ?? '',
-            'unique_name': doc.get('unique_name').toString(),
+            'unique_name':
+                doc.get('unique_name').toString(), // Added unique_name field
           };
         }).toList();
 
