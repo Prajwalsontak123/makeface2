@@ -184,8 +184,9 @@ class _ProfileHomeState extends State<ProfileHome> {
                                         MainAxisAlignment.spaceEvenly,
                                     children: [
                                       _buildStatColumn("Posts", "20"),
-                                      _buildStatColumn("Followers", "2.3m"),
-                                      _buildStatColumn("Following", "2.0k"),
+                                      _buildStatColumn("Fans", _fansCount),
+                                      _buildStatColumn(
+                                          "Supporting", _supportingCount),
                                     ],
                                   ),
                                   SizedBox(height: 10.0),

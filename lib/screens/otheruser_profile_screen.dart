@@ -54,52 +54,52 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
     }
   }
 
- Future<void> fetchCounts() async {
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user != null) {
-    try {
-      QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-          .collection('loggedin_users')
-          .where('unique_name', isEqualTo: widget.otherUserUniqueName)
-          .limit(1)
-          .get();
+  Future<void> fetchCounts() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        QuerySnapshot querySnapshot = await FirebaseFirestore.instance
+            .collection('loggedin_users')
+            .where('unique_name', isEqualTo: widget.otherUserUniqueName)
+            .limit(1)
+            .get();
 
-      if (querySnapshot.docs.isNotEmpty) {
-        DocumentReference otherUserRef = querySnapshot.docs.first.reference;
-        DocumentSnapshot otherUserSnapshot = await otherUserRef.get();
+        if (querySnapshot.docs.isNotEmpty) {
+          DocumentReference otherUserRef = querySnapshot.docs.first.reference;
+          DocumentSnapshot otherUserSnapshot = await otherUserRef.get();
 
-        // Ensure the fields exist
-        Map<String, dynamic> data = otherUserSnapshot.data() as Map<String, dynamic>;
+          // Ensure the fields exist
+          Map<String, dynamic> data =
+              otherUserSnapshot.data() as Map<String, dynamic>;
 
-        // Check if the fields exist, if not initialize them
-        if (!data.containsKey('fans') || !data.containsKey('supporting')) {
-          await FirebaseFirestore.instance
-              .collection('loggedin_users')
-              .doc(otherUserRef.id)
-              .set({
-            'fans': [],
-            'supporting': [],
-          }, SetOptions(merge: true));
+          // Check if the fields exist, if not initialize them
+          if (!data.containsKey('fans') || !data.containsKey('supporting')) {
+            await FirebaseFirestore.instance
+                .collection('loggedin_users')
+                .doc(otherUserRef.id)
+                .set({
+              'fans': [],
+              'supporting': [],
+            }, SetOptions(merge: true));
+          }
+
+          // After ensuring the fields are initialized, fetch the counts
+          DocumentSnapshot updatedSnapshot = await otherUserRef.get();
+          List fansList = updatedSnapshot['fans'] ?? [];
+          List supportingList = updatedSnapshot['supporting'] ?? [];
+
+          setState(() {
+            fansCount = fansList.length;
+            supportingCount = supportingList.length;
+          });
+        } else {
+          throw Exception("Other user not found");
         }
-
-        // After ensuring the fields are initialized, fetch the counts
-        DocumentSnapshot updatedSnapshot = await otherUserRef.get();
-        List fansList = updatedSnapshot['fans'] ?? [];
-        List supportingList = updatedSnapshot['supporting'] ?? [];
-
-        setState(() {
-          fansCount = fansList.length;
-          supportingCount = supportingList.length;
-        });
-      } else {
-        throw Exception("Other user not found");
+      } catch (e) {
+        print('Error fetching counts: $e');
       }
-    } catch (e) {
-      print('Error fetching counts: $e');
     }
   }
-}
-
 
   Future<void> toggleSupport() async {
     User? user = FirebaseAuth.instance.currentUser;
@@ -113,18 +113,21 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           .limit(1)
           .get()
           .then((QuerySnapshot snapshot) {
-            if (snapshot.docs.isNotEmpty) {
-              return snapshot.docs.first.reference;
-            } else {
-              throw Exception("Other user not found");
-            }
-          });
+        if (snapshot.docs.isNotEmpty) {
+          return snapshot.docs.first.reference;
+        } else {
+          throw Exception("Other user not found");
+        }
+      });
 
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        DocumentSnapshot currentUserSnapshot = await transaction.get(currentUserRef);
-        DocumentSnapshot otherUserSnapshot = await transaction.get(otherUserRef);
+        DocumentSnapshot currentUserSnapshot =
+            await transaction.get(currentUserRef);
+        DocumentSnapshot otherUserSnapshot =
+            await transaction.get(otherUserRef);
 
-        List currentUserSupporting = List.from(currentUserSnapshot['supporting'] ?? []);
+        List currentUserSupporting =
+            List.from(currentUserSnapshot['supporting'] ?? []);
         List otherUserFans = List.from(otherUserSnapshot['fans'] ?? []);
 
         if (isSupporting) {
@@ -135,7 +138,8 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           otherUserFans.add(currentUserUniqueName);
         }
 
-        transaction.update(currentUserRef, {'supporting': currentUserSupporting});
+        transaction
+            .update(currentUserRef, {'supporting': currentUserSupporting});
         transaction.update(otherUserRef, {'fans': otherUserFans});
       });
 
@@ -274,7 +278,8 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: 30,
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
+      gridDelegate:
+          SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
       itemBuilder: (context, index) {
         return CachedNetworkImage(
           imageUrl: 'https://via.placeholder.com/150',
