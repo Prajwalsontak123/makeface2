@@ -60,10 +60,11 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
 
       setState(() {
         storyUrls = urls;
+        currentStoryIndex = widget.storyIndex;
       });
 
       if (storyUrls.isNotEmpty) {
-        _loadStory(0);
+        _loadStory(widget.storyIndex);
       }
     } catch (e) {
       print('Error fetching story data: $e');
@@ -128,9 +129,11 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
               child: Stack(
                 children: [
                   // Story Content
+                  // Story Content
                   Positioned.fill(
                     child: _buildStoryContent(),
                   ),
+                  // Top Section
                   // Top Section
                   Positioned(
                     top: 40,
@@ -138,6 +141,7 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
                     right: 16,
                     child: Column(
                       children: [
+                        // Progress Bars
                         // Progress Bars
                         Row(
                           children: List.generate(
@@ -190,6 +194,7 @@ class _StoryViewingPageState extends State<StoryViewingPage> {
                       ],
                     ),
                   ),
+                  // Bottom Actions
                   // Bottom Actions
                   Positioned(
                     bottom: 16,
