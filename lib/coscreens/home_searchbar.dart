@@ -61,34 +61,46 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
   }
 
   Future<void> _getSearchResults(String query) async {
-    QuerySnapshot querySnapshot = await FirebaseFirestore.instance
-        .collection('loggedin_users')
-        .get();
+    QuerySnapshot querySnapshot =
+        await FirebaseFirestore.instance.collection('loggedin_users').get();
 
     setState(() {
-      _searchResults = querySnapshot.docs.map((doc) {
-        // Safely get the username, returning an empty string if it doesn't exist
-        String username = (doc.data() as Map<String, dynamic>)['username']?.toString().toLowerCase() ?? '';
-        
-        // Print for debugging
-        print('Document ID: ${doc.id}, Username: $username');
-        
-        double similarity = _calculateSimilarity(username, query.toLowerCase());
-        
-        if (similarity >= 0.6) {
-          return {
-            'username': username,
-            'profile_image': (doc.data() as Map<String, dynamic>)['profile_image'] ?? 'https://via.placeholder.com/150',
-            'bio': (doc.data() as Map<String, dynamic>)['bio'] ?? '',
-            'unique_name': (doc.data() as Map<String, dynamic>)['unique_name']?.toString() ?? '',
-            'similarity': similarity,
-          };
-        }
-        return null;
-      }).whereType<Map<String, dynamic>>().toList();
+      _searchResults = querySnapshot.docs
+          .map((doc) {
+            // Safely get the username, returning an empty string if it doesn't exist
+            String username = (doc.data() as Map<String, dynamic>)['username']
+                    ?.toString()
+                    .toLowerCase() ??
+                '';
 
-      _searchResults.sort((a, b) => (b['similarity'] as double).compareTo(a['similarity'] as double));
-      
+            // Print for debugging
+            print('Document ID: ${doc.id}, Username: $username');
+
+            double similarity =
+                _calculateSimilarity(username, query.toLowerCase());
+
+            if (similarity >= 0.6) {
+              return {
+                'username': username,
+                'profile_image':
+                    (doc.data() as Map<String, dynamic>)['profile_image'] ??
+                        'https://via.placeholder.com/150',
+                'bio': (doc.data() as Map<String, dynamic>)['bio'] ?? '',
+                'unique_name':
+                    (doc.data() as Map<String, dynamic>)['unique_name']
+                            ?.toString() ??
+                        '',
+                'similarity': similarity,
+              };
+            }
+            return null;
+          })
+          .whereType<Map<String, dynamic>>()
+          .toList();
+
+      _searchResults.sort((a, b) =>
+          (b['similarity'] as double).compareTo(a['similarity'] as double));
+
       // Print for debugging
       print('Search Results: $_searchResults');
     });
@@ -170,9 +182,11 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                               MaterialPageRoute(
                                 builder: (context) => OtherUserProfileScreen(
                                   username: _searchResults[index]['username'],
-                                  profileImage: _searchResults[index]['profile_image'],
+                                  profileImage: _searchResults[index]
+                                      ['profile_image'],
                                   bio: _searchResults[index]['bio'],
-                                  otherUserUniqueName: _searchResults[index]['unique_name'],
+                                  otherUserUniqueName: _searchResults[index]
+                                      ['unique_name'],
                                 ),
                               ),
                             );
@@ -242,7 +256,8 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
                         }
 
                         final doc = snapshot.data!.docs.first;
-                        final profileImage = (doc.data() as Map<String, dynamic>)['profile_image'] ??
+                        final profileImage = (doc.data()
+                                as Map<String, dynamic>)['profile_image'] ??
                             'https://via.placeholder.com/150';
 
                         return CircleAvatar(
@@ -279,9 +294,8 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
 
   Widget _buildSuggestionsList() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('loggedin_users')
-          .snapshots(),
+      stream:
+          FirebaseFirestore.instance.collection('loggedin_users').snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return Center(
@@ -289,28 +303,41 @@ class _HomeSearchBarState extends State<HomeSearchBar> {
           );
         }
 
-        final users = snapshot.data!.docs.map((doc) {
-          // Safely get the username, returning an empty string if it doesn't exist
-          String username = (doc.data() as Map<String, dynamic>)['username']?.toString().toLowerCase() ?? '';
-          
-          // Print for debugging
-          print('Document ID: ${doc.id}, Username: $username');
-          
-          double similarity = _calculateSimilarity(username, _searchController.text.toLowerCase());
-          
-          if (similarity >= 0.6) {
-            return {
-              'username': username,
-              'profile_image': (doc.data() as Map<String, dynamic>)['profile_image'] ?? 'https://via.placeholder.com/150',
-              'bio': (doc.data() as Map<String, dynamic>)['bio'] ?? '',
-              'unique_name': (doc.data() as Map<String, dynamic>)['unique_name']?.toString() ?? '',
-              'similarity': similarity,
-            };
-          }
-          return null;
-        }).whereType<Map<String, dynamic>>().toList();
+        final users = snapshot.data!.docs
+            .map((doc) {
+              // Safely get the username, returning an empty string if it doesn't exist
+              String username = (doc.data() as Map<String, dynamic>)['username']
+                      ?.toString()
+                      .toLowerCase() ??
+                  '';
 
-        users.sort((a, b) => (b['similarity'] as double).compareTo(a['similarity'] as double));
+              // Print for debugging
+              print('Document ID: ${doc.id}, Username: $username');
+
+              double similarity = _calculateSimilarity(
+                  username, _searchController.text.toLowerCase());
+
+              if (similarity >= 0.6) {
+                return {
+                  'username': username,
+                  'profile_image':
+                      (doc.data() as Map<String, dynamic>)['profile_image'] ??
+                          'https://via.placeholder.com/150',
+                  'bio': (doc.data() as Map<String, dynamic>)['bio'] ?? '',
+                  'unique_name':
+                      (doc.data() as Map<String, dynamic>)['unique_name']
+                              ?.toString() ??
+                          '',
+                  'similarity': similarity,
+                };
+              }
+              return null;
+            })
+            .whereType<Map<String, dynamic>>()
+            .toList();
+
+        users.sort((a, b) =>
+            (b['similarity'] as double).compareTo(a['similarity'] as double));
 
         // Print for debugging
         print('Suggestions: $users');
