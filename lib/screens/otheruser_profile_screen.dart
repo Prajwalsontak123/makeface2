@@ -143,11 +143,23 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
         transaction.update(otherUserRef, {'fans': otherUserFans});
       });
 
+      // Create notification
+      await createNotification(!isSupporting);
+
       setState(() {
         isSupporting = !isSupporting;
         fetchCounts();
       });
     }
+  }
+
+  Future<void> createNotification(bool isStartedSupporting) async {
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'to_unique_name': widget.otherUserUniqueName,
+      'from_unique_name': currentUserUniqueName,
+      'type': isStartedSupporting ? 'started_supporting' : 'stopped_supporting',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 
   @override
@@ -160,7 +172,10 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           actions: [
             IconButton(
               icon: Icon(Icons.notifications_none),
-              onPressed: () {},
+              onPressed: () {
+                // Navigate to NotificationScreen
+                Navigator.pushNamed(context, '/notifications');
+              },
             ),
             IconButton(
               icon: Icon(Icons.menu),

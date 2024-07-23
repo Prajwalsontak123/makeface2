@@ -5,10 +5,11 @@ import 'package:image_picker/image_picker.dart';
 
 import '../coscreens/profile_home_edit.dart';
 import 'anime_chat.dart';
-import 'bottom_nav_bar.dart'; // Import the BottomNavBar widget
+import 'bottom_nav_bar.dart';
 import 'circle_screen.dart';
 import 'home_screen.dart';
-import 'settings_page.dart'; // Import the settings page
+import 'notification.dart'; // Import the NotificationScreen
+import 'settings_page.dart';
 
 class ProfileHome extends StatefulWidget {
   @override
@@ -17,12 +18,12 @@ class ProfileHome extends StatefulWidget {
 
 class _ProfileHomeState extends State<ProfileHome> {
   late String _uniqueName = '';
-  late String _userName = ''; // Added userName field
+  late String _userName = '';
   late String _userId;
   late String _fetchedBio = '';
   late String _profileImageUrl = '';
-  late String _fansCount = '0'; // Initialize fans count
-  late String _supportingCount = '0'; // Initialize supporting count
+  late String _fansCount = '0';
+  late String _supportingCount = '0';
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -49,7 +50,6 @@ class _ProfileHomeState extends State<ProfileHome> {
         if (userSnapshot.exists) {
           final data = userSnapshot.data() ?? {};
 
-          // Check if 'fans' and 'supporting' fields exist; if not, initialize them
           if (data['fans'] == null) {
             await userDocRef.update({'fans': []});
           }
@@ -64,7 +64,7 @@ class _ProfileHomeState extends State<ProfileHome> {
 
           setState(() {
             _uniqueName = updatedData['unique_name'] ?? '';
-            _userName = updatedData['username'] ?? ''; // Fetch username
+            _userName = updatedData['username'] ?? '';
             _fetchedBio = updatedData['bio'] ?? '';
             _profileImageUrl = updatedData['profile_image'] ?? '';
 
@@ -83,7 +83,6 @@ class _ProfileHomeState extends State<ProfileHome> {
           });
         }
 
-        // Set loading state to false
         setState(() {
           _isLoading = false;
         });
@@ -120,8 +119,14 @@ class _ProfileHomeState extends State<ProfileHome> {
   void _navigateToSettingsPage() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-          builder: (context) => SettingsPage()), // Navigate to settings page
+      MaterialPageRoute(builder: (context) => SettingsPage()),
+    );
+  }
+
+  void _navigateToNotificationScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => NotificationScreen()),
     );
   }
 
@@ -129,7 +134,7 @@ class _ProfileHomeState extends State<ProfileHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_uniqueName), // Display unique_name in app bar title
+        title: Text(_uniqueName),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -141,8 +146,12 @@ class _ProfileHomeState extends State<ProfileHome> {
         ),
         actions: [
           IconButton(
+            icon: Icon(Icons.notifications),
+            onPressed: _navigateToNotificationScreen,
+          ),
+          IconButton(
             icon: Icon(Icons.menu),
-            onPressed: _navigateToSettingsPage, // Navigate to settings page
+            onPressed: _navigateToSettingsPage,
           ),
         ],
       ),
@@ -203,7 +212,7 @@ class _ProfileHomeState extends State<ProfileHome> {
                   ),
                 ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 4, // Set the current index to 4 (User Profile)
+        currentIndex: 4,
         onTap: (index) {
           switch (index) {
             case 0:
@@ -256,7 +265,7 @@ class _ProfileHomeState extends State<ProfileHome> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Username: $_userName', // Display username in bio section
+            'Username: $_userName',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -273,33 +282,24 @@ class _ProfileHomeState extends State<ProfileHome> {
   }
 
   Widget _buildPostGrid() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.all(2.0),
-          child: GridView.builder(
-            shrinkWrap: true,
-            physics: NeverScrollableScrollPhysics(),
-            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 3,
-              crossAxisSpacing: 2.0,
-              mainAxisSpacing: 2.0,
-            ),
-            itemCount: 30,
-            itemBuilder: (BuildContext context, int index) {
-              return Image.network(
-                'https://via.placeholder.com/150',
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) {
-                  return Image.asset('assets/images/avatar.png',
-                      fit: BoxFit.cover);
-                },
-              );
-            },
-          ),
-        ),
-      ],
+    return GridView.builder(
+      shrinkWrap: true,
+      physics: NeverScrollableScrollPhysics(),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: 3,
+        crossAxisSpacing: 2.0,
+        mainAxisSpacing: 2.0,
+      ),
+      itemCount: 30,
+      itemBuilder: (BuildContext context, int index) {
+        return Image.network(
+          'https://via.placeholder.com/150',
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Image.asset('assets/images/avatar.png', fit: BoxFit.cover);
+          },
+        );
+      },
     );
   }
 
@@ -317,7 +317,7 @@ class _ProfileHomeState extends State<ProfileHome> {
                 title: Text('Camera'),
                 onTap: () {
                   _openCamera(context);
-                  Navigator.pop(context); // Close the dialog
+                  Navigator.pop(context);
                 },
               ),
               ListTile(
@@ -325,7 +325,7 @@ class _ProfileHomeState extends State<ProfileHome> {
                 title: Text('Gallery'),
                 onTap: () {
                   _openGallery(context);
-                  Navigator.pop(context); // Close the dialog
+                  Navigator.pop(context);
                 },
               ),
             ],
