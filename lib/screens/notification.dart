@@ -12,7 +12,8 @@ class NotificationScreen extends StatefulWidget {
 class _NotificationScreenState extends State<NotificationScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  late String currentUserUniqueName;
+  String? currentUserUniqueName;
+  bool isLoading = true; // Add a loading state
 
   @override
   void initState() {
@@ -26,19 +27,47 @@ class _NotificationScreenState extends State<NotificationScreen> {
       DocumentSnapshot userDoc = await _firestore.collection('loggedin_users').doc(user.uid).get();
       setState(() {
         currentUserUniqueName = userDoc['unique_name'];
+        _checkAndCreateNotificationDocument();
+      });
+    }
+  }
+
+  Future<void> _checkAndCreateNotificationDocument() async {
+    if (currentUserUniqueName != null) {
+      DocumentReference notificationDocRef = _firestore.collection('notifications').doc(currentUserUniqueName);
+
+      DocumentSnapshot notificationDoc = await notificationDocRef.get();
+      if (!notificationDoc.exists) {
+        await notificationDocRef.set({
+          'notifications': [] // Initialize with an empty array or default values
+        });
+      }
+
+      setState(() {
+        isLoading = false; // Set loading to false after initializing
       });
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text('Notifications'),
+        ),
+        body: Center(child: CircularProgressIndicator()), // Show loading indicator while fetching data
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: Text('Notifications'),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore.collection('notifications')
-            .where('to_unique_name', isEqualTo: currentUserUniqueName)
+            .doc(currentUserUniqueName!)
+            .collection('notifications') // Assuming notifications are subcollection
             .orderBy('timestamp', descending: true)
             .snapshots(),
         builder: (context, snapshot) {
