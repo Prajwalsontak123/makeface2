@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:makeface2/coscreens/home_searchbar.dart';
 import 'package:makeface2/screens/anime_chat.dart';
 import 'package:makeface2/screens/circle_screen.dart';
+import 'package:makeface2/screens/notification.dart';
 import 'package:makeface2/screens/profile_home.dart';
 import 'package:makeface2/screens/story_section.dart';
 
@@ -20,7 +21,10 @@ class HomeScreen extends StatelessWidget {
         leading: IconButton(
           icon: Icon(Icons.notifications),
           onPressed: () {
-            // Add onPressed functionality for notifications
+            Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => NotificationScreen()),
+              );
           },
         ),
         actions: <Widget>[
