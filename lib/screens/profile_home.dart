@@ -5,11 +5,10 @@ import 'package:image_picker/image_picker.dart';
 
 import '../coscreens/profile_home_edit.dart';
 import 'anime_chat.dart';
-import 'bottom_nav_bar.dart';
+import 'bottom_nav_bar.dart'; // Import the BottomNavBar widget
 import 'circle_screen.dart';
 import 'home_screen.dart';
-import 'notification.dart'; // Import the NotificationScreen
-import 'settings_page.dart';
+import 'settings_page.dart'; // Import the settings page
 
 class ProfileHome extends StatefulWidget {
   @override
@@ -18,12 +17,12 @@ class ProfileHome extends StatefulWidget {
 
 class _ProfileHomeState extends State<ProfileHome> {
   late String _uniqueName = '';
-  late String _userName = '';
+  late String _userName = ''; // Added userName field
   late String _userId;
   late String _fetchedBio = '';
   late String _profileImageUrl = '';
-  late String _fansCount = '0';
-  late String _supportingCount = '0';
+  late String _fansCount = '0'; // Initialize fans count
+  late String _supportingCount = '0'; // Initialize supporting count
   bool _isLoading = true;
   String _errorMessage = '';
 
@@ -40,16 +39,14 @@ class _ProfileHomeState extends State<ProfileHome> {
         _userId = user.uid;
 
         // Fetch user data from loggedin_users collection based on user ID
-        DocumentReference<Map<String, dynamic>> userDocRef = FirebaseFirestore
-            .instance
-            .collection('loggedin_users')
-            .doc(user.uid);
-        DocumentSnapshot<Map<String, dynamic>> userSnapshot =
-            await userDocRef.get();
+        DocumentReference<Map<String, dynamic>> userDocRef =
+            FirebaseFirestore.instance.collection('loggedin_users').doc(user.uid);
+        DocumentSnapshot<Map<String, dynamic>> userSnapshot = await userDocRef.get();
 
         if (userSnapshot.exists) {
           final data = userSnapshot.data() ?? {};
 
+          // Check if 'fans' and 'supporting' fields exist; if not, initialize them
           if (data['fans'] == null) {
             await userDocRef.update({'fans': []});
           }
@@ -58,24 +55,18 @@ class _ProfileHomeState extends State<ProfileHome> {
           }
 
           // Fetch user data again after ensuring fields exist
-          DocumentSnapshot<Map<String, dynamic>> updatedUserSnapshot =
-              await userDocRef.get();
+          DocumentSnapshot<Map<String, dynamic>> updatedUserSnapshot = await userDocRef.get();
           final updatedData = updatedUserSnapshot.data() ?? {};
 
           setState(() {
             _uniqueName = updatedData['unique_name'] ?? '';
-            _userName = updatedData['username'] ?? '';
+            _userName = updatedData['username'] ?? ''; // Fetch username
             _fetchedBio = updatedData['bio'] ?? '';
             _profileImageUrl = updatedData['profile_image'] ?? '';
-
+            
             // Check if 'fans' and 'supporting' fields exist and get their counts
-            _fansCount =
-                (updatedData['fans'] as List<dynamic>?)?.length.toString() ??
-                    '0';
-            _supportingCount = (updatedData['supporting'] as List<dynamic>?)
-                    ?.length
-                    .toString() ??
-                '0';
+            _fansCount = (updatedData['fans'] as List<dynamic>?)?.length.toString() ?? '0';
+            _supportingCount = (updatedData['supporting'] as List<dynamic>?)?.length.toString() ?? '0';
           });
         } else {
           setState(() {
@@ -83,6 +74,7 @@ class _ProfileHomeState extends State<ProfileHome> {
           });
         }
 
+        // Set loading state to false
         setState(() {
           _isLoading = false;
         });
@@ -119,14 +111,8 @@ class _ProfileHomeState extends State<ProfileHome> {
   void _navigateToSettingsPage() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => SettingsPage()),
-    );
-  }
-
-  void _navigateToNotificationScreen() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => NotificationScreen()),
+      MaterialPageRoute(
+          builder: (context) => SettingsPage()), // Navigate to settings page
     );
   }
 
@@ -134,7 +120,7 @@ class _ProfileHomeState extends State<ProfileHome> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_uniqueName),
+        title: Text(_uniqueName), // Display unique_name in app bar title
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -146,12 +132,8 @@ class _ProfileHomeState extends State<ProfileHome> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.notifications),
-            onPressed: _navigateToNotificationScreen,
-          ),
-          IconButton(
             icon: Icon(Icons.menu),
-            onPressed: _navigateToSettingsPage,
+            onPressed: _navigateToSettingsPage, // Navigate to settings page
           ),
         ],
       ),
@@ -194,8 +176,7 @@ class _ProfileHomeState extends State<ProfileHome> {
                                     children: [
                                       _buildStatColumn("Posts", "20"),
                                       _buildStatColumn("Fans", _fansCount),
-                                      _buildStatColumn(
-                                          "Supporting", _supportingCount),
+                                      _buildStatColumn("Supporting", _supportingCount),
                                     ],
                                   ),
                                   SizedBox(height: 10.0),
@@ -212,7 +193,7 @@ class _ProfileHomeState extends State<ProfileHome> {
                   ),
                 ),
       bottomNavigationBar: BottomNavBar(
-        currentIndex: 4,
+        currentIndex: 4, // Set the current index to 4 (User Profile)
         onTap: (index) {
           switch (index) {
             case 0:
@@ -265,7 +246,7 @@ class _ProfileHomeState extends State<ProfileHome> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Username: $_userName',
+            'Username: $_userName', // Display username in bio section
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
@@ -282,24 +263,33 @@ class _ProfileHomeState extends State<ProfileHome> {
   }
 
   Widget _buildPostGrid() {
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 2.0,
-        mainAxisSpacing: 2.0,
-      ),
-      itemCount: 30,
-      itemBuilder: (BuildContext context, int index) {
-        return Image.network(
-          'https://via.placeholder.com/150',
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Image.asset('assets/images/avatar.png', fit: BoxFit.cover);
-          },
-        );
-      },
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.all(2.0),
+          child: GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 2.0,
+              mainAxisSpacing: 2.0,
+            ),
+            itemCount: 30,
+            itemBuilder: (BuildContext context, int index) {
+              return Image.network(
+                'https://via.placeholder.com/150',
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Image.asset('assets/images/avatar.png',
+                      fit: BoxFit.cover);
+                },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -317,7 +307,7 @@ class _ProfileHomeState extends State<ProfileHome> {
                 title: Text('Camera'),
                 onTap: () {
                   _openCamera(context);
-                  Navigator.pop(context);
+                  Navigator.pop(context); // Close the dialog
                 },
               ),
               ListTile(
@@ -325,7 +315,7 @@ class _ProfileHomeState extends State<ProfileHome> {
                 title: Text('Gallery'),
                 onTap: () {
                   _openGallery(context);
-                  Navigator.pop(context);
+                  Navigator.pop(context); // Close the dialog
                 },
               ),
             ],
@@ -335,21 +325,22 @@ class _ProfileHomeState extends State<ProfileHome> {
     );
   }
 
-  void _openCamera(BuildContext context) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
-    if (pickedFile != null) {
-      // Handle camera image
-      // You can access the file using pickedFile.path
-    }
+ void _openCamera(BuildContext context) async {
+  final picker = ImagePicker();
+  final pickedFile = await picker.pickImage(source: ImageSource.camera);
+  if (pickedFile != null) {
+    // Handle camera image
+    // You can access the file using pickedFile.path
   }
+}
 
-  void _openGallery(BuildContext context) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      // Handle gallery image
-      // You can access the file using pickedFile.path
-    }
+void _openGallery(BuildContext context) async {
+  final picker = ImagePicker();
+  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+  if (pickedFile != null) {
+    // Handle gallery image
+    // You can access the file using pickedFile.path
   }
+}
+
 }

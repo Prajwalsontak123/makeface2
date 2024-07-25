@@ -46,7 +46,7 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
       currentUserId = user.uid;
 
       List supportingList = currentUserSnapshot['supporting'] ?? [];
-      if (supportingList.contains(widget.otherUserUniqueName)) {
+      if (supportingList.any((item) => item['unique_name'] == widget.otherUserUniqueName)) {
         setState(() {
           isSupporting = true;
         });
@@ -68,11 +68,8 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           DocumentReference otherUserRef = querySnapshot.docs.first.reference;
           DocumentSnapshot otherUserSnapshot = await otherUserRef.get();
 
-          // Ensure the fields exist
-          Map<String, dynamic> data =
-              otherUserSnapshot.data() as Map<String, dynamic>;
+          Map<String, dynamic> data = otherUserSnapshot.data() as Map<String, dynamic>;
 
-          // Check if the fields exist, if not initialize them
           if (!data.containsKey('fans') || !data.containsKey('supporting')) {
             await FirebaseFirestore.instance
                 .collection('loggedin_users')
@@ -83,7 +80,6 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
             }, SetOptions(merge: true));
           }
 
-          // After ensuring the fields are initialized, fetch the counts
           DocumentSnapshot updatedSnapshot = await otherUserRef.get();
           List fansList = updatedSnapshot['fans'] ?? [];
           List supportingList = updatedSnapshot['supporting'] ?? [];
@@ -113,53 +109,43 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           .limit(1)
           .get()
           .then((QuerySnapshot snapshot) {
-        if (snapshot.docs.isNotEmpty) {
-          return snapshot.docs.first.reference;
-        } else {
-          throw Exception("Other user not found");
-        }
-      });
+            if (snapshot.docs.isNotEmpty) {
+              return snapshot.docs.first.reference;
+            } else {
+              throw Exception("Other user not found");
+            }
+          });
 
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        DocumentSnapshot currentUserSnapshot =
-            await transaction.get(currentUserRef);
-        DocumentSnapshot otherUserSnapshot =
-            await transaction.get(otherUserRef);
+        DocumentSnapshot currentUserSnapshot = await transaction.get(currentUserRef);
+        DocumentSnapshot otherUserSnapshot = await transaction.get(otherUserRef);
 
-        List currentUserSupporting =
-            List.from(currentUserSnapshot['supporting'] ?? []);
+        List currentUserSupporting = List.from(currentUserSnapshot['supporting'] ?? []);
         List otherUserFans = List.from(otherUserSnapshot['fans'] ?? []);
 
         if (isSupporting) {
-          currentUserSupporting.remove(widget.otherUserUniqueName);
-          otherUserFans.remove(currentUserUniqueName);
+          currentUserSupporting.removeWhere((item) => item['unique_name'] == widget.otherUserUniqueName);
+          otherUserFans.removeWhere((item) => item['unique_name'] == currentUserUniqueName);
         } else {
-          currentUserSupporting.add(widget.otherUserUniqueName);
-          otherUserFans.add(currentUserUniqueName);
+          currentUserSupporting.add({
+            'unique_name': widget.otherUserUniqueName,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
+          otherUserFans.add({
+            'unique_name': currentUserUniqueName,
+            'timestamp': FieldValue.serverTimestamp(),
+          });
         }
 
-        transaction
-            .update(currentUserRef, {'supporting': currentUserSupporting});
+        transaction.update(currentUserRef, {'supporting': currentUserSupporting});
         transaction.update(otherUserRef, {'fans': otherUserFans});
       });
-
-      // Create notification
-      await createNotification(!isSupporting);
 
       setState(() {
         isSupporting = !isSupporting;
         fetchCounts();
       });
     }
-  }
-
-  Future<void> createNotification(bool isStartedSupporting) async {
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'to_unique_name': widget.otherUserUniqueName,
-      'from_unique_name': currentUserUniqueName,
-      'type': isStartedSupporting ? 'started_supporting' : 'stopped_supporting',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
   }
 
   @override
@@ -172,10 +158,7 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           actions: [
             IconButton(
               icon: Icon(Icons.notifications_none),
-              onPressed: () {
-                // Navigate to NotificationScreen
-                Navigator.pushNamed(context, '/notifications');
-              },
+              onPressed: () {},
             ),
             IconButton(
               icon: Icon(Icons.menu),
@@ -293,8 +276,7 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: 30,
-      gridDelegate:
-          SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
       itemBuilder: (context, index) {
         return CachedNetworkImage(
           imageUrl: 'https://via.placeholder.com/150',
