@@ -2,13 +2,14 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:makeface2/screens/view_notification.dart';
 
 import '../coscreens/profile_home_edit.dart';
 import 'anime_chat.dart';
 import 'bottom_nav_bar.dart';
 import 'circle_screen.dart';
 import 'home_screen.dart';
-import 'notification.dart'; // Import the NotificationScreen
+// Import the NotificationScreen
 import 'settings_page.dart';
 
 class ProfileHome extends StatefulWidget {
@@ -126,7 +127,7 @@ class _ProfileHomeState extends State<ProfileHome> {
   void _navigateToNotificationScreen() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => NotificationScreen()),
+      MaterialPageRoute(builder: (context) => ViewNotificationPage()),
     );
   }
 

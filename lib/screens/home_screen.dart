@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:makeface2/coscreens/home_searchbar.dart';
 import 'package:makeface2/screens/anime_chat.dart';
 import 'package:makeface2/screens/circle_screen.dart';
-import 'package:makeface2/screens/notification.dart';
 import 'package:makeface2/screens/profile_home.dart';
 import 'package:makeface2/screens/story_section.dart';
+import 'package:makeface2/screens/view_notification.dart';
 
 import 'bottom_nav_bar.dart';
 
@@ -22,9 +22,9 @@ class HomeScreen extends StatelessWidget {
           icon: Icon(Icons.notifications),
           onPressed: () {
             Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NotificationScreen()),
-              );
+              context,
+              MaterialPageRoute(builder: (context) => ViewNotificationPage()),
+            );
           },
         ),
         actions: <Widget>[
