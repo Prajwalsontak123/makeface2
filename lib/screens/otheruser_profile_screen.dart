@@ -2,6 +2,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:makeface2/screens/view_notification.dart';
 
 class OtherUserProfileScreen extends StatefulWidget {
   final String username;
@@ -141,11 +142,23 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
         transaction.update(otherUserRef, {'fans': otherUserFans});
       });
 
+      // Create notification
+      await createNotification(!isSupporting);
+
       setState(() {
         isSupporting = !isSupporting;
         fetchCounts();
       });
     }
+  }
+
+  Future<void> createNotification(bool isStartedSupporting) async {
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'to_unique_name': widget.otherUserUniqueName,
+      'from_unique_name': currentUserUniqueName,
+      'type': isStartedSupporting ? 'started_supporting' : 'stopped_supporting',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
   }
 
   @override
@@ -158,7 +171,10 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           actions: [
             IconButton(
               icon: Icon(Icons.notifications_none),
-              onPressed: () {},
+              onPressed: () {
+                // Navigate to NotificationScreen
+                Navigator.pushNamed(context, '/notifications');
+              },
             ),
             IconButton(
               icon: Icon(Icons.menu),
@@ -195,23 +211,20 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           ),
           Column(
             children: [
-              Text('150',
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-              Text('Posts'),
-            ],
-          ),
-          Column(
-            children: [
-              Text(fansCount.toString(),
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-              Text('Fans'),
-            ],
-          ),
-          Column(
-            children: [
-              Text(supportingCount.toString(),
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+              Text(
+                '$supportingCount',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               Text('Supporting'),
+            ],
+          ),
+          Column(
+            children: [
+              Text(
+                '$fansCount',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text('Fans'),
             ],
           ),
         ],
