@@ -2,7 +2,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:makeface2/screens/view_notification.dart';
 
 class OtherUserProfileScreen extends StatefulWidget {
   final String username;
@@ -47,7 +46,7 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
       currentUserId = user.uid;
 
       List supportingList = currentUserSnapshot['supporting'] ?? [];
-      if (supportingList.any((item) => item['unique_name'] == widget.otherUserUniqueName)) {
+      if (supportingList.contains(widget.otherUserUniqueName)) {
         setState(() {
           isSupporting = true;
         });
@@ -125,25 +124,22 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
         List otherUserFans = List.from(otherUserSnapshot['fans'] ?? []);
 
         if (isSupporting) {
-          currentUserSupporting.removeWhere((item) => item['unique_name'] == widget.otherUserUniqueName);
-          otherUserFans.removeWhere((item) => item['unique_name'] == currentUserUniqueName);
+          currentUserSupporting.remove(widget.otherUserUniqueName);
+          otherUserFans.remove(currentUserUniqueName);
+
+          // Remove the support notification
+          await _removeSupportNotification();
         } else {
-          currentUserSupporting.add({
-            'unique_name': widget.otherUserUniqueName,
-            'timestamp': FieldValue.serverTimestamp(),
-          });
-          otherUserFans.add({
-            'unique_name': currentUserUniqueName,
-            'timestamp': FieldValue.serverTimestamp(),
-          });
+          currentUserSupporting.add(widget.otherUserUniqueName);
+          otherUserFans.add(currentUserUniqueName);
+
+          // Add the support notification
+          await _addSupportNotification();
         }
 
         transaction.update(currentUserRef, {'supporting': currentUserSupporting});
         transaction.update(otherUserRef, {'fans': otherUserFans});
       });
-
-      // Create notification
-      await createNotification(!isSupporting);
 
       setState(() {
         isSupporting = !isSupporting;
@@ -152,13 +148,26 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
     }
   }
 
-  Future<void> createNotification(bool isStartedSupporting) async {
+  Future<void> _addSupportNotification() async {
     await FirebaseFirestore.instance.collection('notifications').add({
-      'to_unique_name': widget.otherUserUniqueName,
       'from_unique_name': currentUserUniqueName,
-      'type': isStartedSupporting ? 'started_supporting' : 'stopped_supporting',
+      'to_unique_name': widget.otherUserUniqueName,
+      'type': 'started supporting you',
       'timestamp': FieldValue.serverTimestamp(),
     });
+  }
+
+  Future<void> _removeSupportNotification() async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('notifications')
+        .where('from_unique_name', isEqualTo: currentUserUniqueName)
+        .where('to_unique_name', isEqualTo: widget.otherUserUniqueName)
+        .where('type', isEqualTo: 'started supporting you')
+        .get();
+
+    for (DocumentSnapshot doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
   }
 
   @override
@@ -171,10 +180,7 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           actions: [
             IconButton(
               icon: Icon(Icons.notifications_none),
-              onPressed: () {
-                // Navigate to NotificationScreen
-                Navigator.pushNamed(context, '/notifications');
-              },
+              onPressed: () {},
             ),
             IconButton(
               icon: Icon(Icons.menu),
@@ -211,20 +217,23 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           ),
           Column(
             children: [
-              Text(
-                '$supportingCount',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text('Supporting'),
+              Text('150',
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+              Text('Posts'),
             ],
           ),
           Column(
             children: [
-              Text(
-                '$fansCount',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              Text(fansCount.toString(),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
               Text('Fans'),
+            ],
+          ),
+          Column(
+            children: [
+              Text(supportingCount.toString(),
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+              Text('Supporting'),
             ],
           ),
         ],
@@ -305,9 +314,10 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.add_box), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.favorite), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
       ],
+      type: BottomNavigationBarType.fixed,
     );
   }
 }
