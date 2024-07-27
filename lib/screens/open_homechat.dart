@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'calling.dart';
-
 class OpenHomeChat extends StatefulWidget {
   final String otherUserId;
   final String otherUserName;
@@ -85,20 +83,7 @@ class _OpenHomeChatState extends State<OpenHomeChat> {
         ),
         actions: [
           IconButton(icon: Icon(Icons.video_call), onPressed: () {}),
-          IconButton(
-      icon: Icon(Icons.call),
-      onPressed: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => Calling(
-              calleeName: widget.otherUserName,
-              calleeImage: widget.otherUserProfileImage,
-            ),
-          ),
-        );
-      },
-    ),
+          IconButton(icon: Icon(Icons.call), onPressed: () {}),
           IconButton(icon: Icon(Icons.more_vert), onPressed: () {}),
         ],
       ),
