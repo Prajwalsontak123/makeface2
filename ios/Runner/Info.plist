@@ -56,6 +56,10 @@
     <key>NSPhotoLibraryAddUsageDescription</key>
     <string>We need access to save photos to your photo library.</string>
 
-    <!-- Add your custom keys or configurations here -->
+    <!-- video and voice call -->
+    <key>NSCameraUsageDescription</key>
+    <string>Need camera access for video calls</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Need microphone access for voice calls</string>
 </dict>
 </plist>

@@ -43,6 +43,9 @@ dependencies:
   photo_manager: ^3.2.1
   percent_indicator: ^4.2.3
   timeago: ^3.7.0
+  agora_rtc_engine: ^6.1.1
+  flutter_ringtone_player: ^3.0.0
+  http: ^1.2.2
 
   # No new dependencies needed to be added for the view_story.dart implementation
 
