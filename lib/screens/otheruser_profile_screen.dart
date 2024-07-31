@@ -68,8 +68,7 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           DocumentReference otherUserRef = querySnapshot.docs.first.reference;
           DocumentSnapshot otherUserSnapshot = await otherUserRef.get();
 
-          Map<String, dynamic> data =
-              otherUserSnapshot.data() as Map<String, dynamic>;
+          Map<String, dynamic> data = otherUserSnapshot.data() as Map<String, dynamic>;
 
           if (!data.containsKey('fans') || !data.containsKey('supporting')) {
             await FirebaseFirestore.instance
@@ -110,21 +109,18 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           .limit(1)
           .get()
           .then((QuerySnapshot snapshot) {
-        if (snapshot.docs.isNotEmpty) {
-          return snapshot.docs.first.reference;
-        } else {
-          throw Exception("Other user not found");
-        }
-      });
+            if (snapshot.docs.isNotEmpty) {
+              return snapshot.docs.first.reference;
+            } else {
+              throw Exception("Other user not found");
+            }
+          });
 
       await FirebaseFirestore.instance.runTransaction((transaction) async {
-        DocumentSnapshot currentUserSnapshot =
-            await transaction.get(currentUserRef);
-        DocumentSnapshot otherUserSnapshot =
-            await transaction.get(otherUserRef);
+        DocumentSnapshot currentUserSnapshot = await transaction.get(currentUserRef);
+        DocumentSnapshot otherUserSnapshot = await transaction.get(otherUserRef);
 
-        List currentUserSupporting =
-            List.from(currentUserSnapshot['supporting'] ?? []);
+        List currentUserSupporting = List.from(currentUserSnapshot['supporting'] ?? []);
         List otherUserFans = List.from(otherUserSnapshot['fans'] ?? []);
 
         if (isSupporting) {
@@ -141,13 +137,9 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           await _addSupportNotification();
         }
 
-        transaction
-            .update(currentUserRef, {'supporting': currentUserSupporting});
+        transaction.update(currentUserRef, {'supporting': currentUserSupporting});
         transaction.update(otherUserRef, {'fans': otherUserFans});
       });
-
-      // Create notification for both users
-      await createNotification(isSupporting);
 
       setState(() {
         isSupporting = !isSupporting;
@@ -156,21 +148,11 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
     }
   }
 
-  Future<void> createNotification(bool isStartedSupporting) async {
-    // Notification for current user
+  Future<void> _addSupportNotification() async {
     await FirebaseFirestore.instance.collection('notifications').add({
       'from_unique_name': currentUserUniqueName,
       'to_unique_name': widget.otherUserUniqueName,
-      'from_unique_name': currentUserUniqueName,
-      'type': isStartedSupporting ? 'started_supporting' : 'stopped_supporting',
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
-    // Notification for the other user
-    await FirebaseFirestore.instance.collection('notifications').add({
-      'to_unique_name': currentUserUniqueName,
-      'from_unique_name': widget.otherUserUniqueName,
-      'type': isStartedSupporting ? 'started_supporting' : 'stopped_supporting',
+      'type': 'started supporting you',
       'timestamp': FieldValue.serverTimestamp(),
     });
   }
@@ -198,14 +180,7 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           actions: [
             IconButton(
               icon: Icon(Icons.notifications_none),
-              onPressed: () {
-                // Navigate to NotificationScreen
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => ViewNotificationPage()),
-                );
-              },
+              onPressed: () {},
             ),
             IconButton(
               icon: Icon(Icons.menu),
@@ -323,8 +298,7 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
       physics: NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       itemCount: 30,
-      gridDelegate:
-          SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 3),
       itemBuilder: (context, index) {
         return CachedNetworkImage(
           imageUrl: 'https://via.placeholder.com/150',
