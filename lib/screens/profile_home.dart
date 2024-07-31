@@ -8,9 +8,11 @@ import '../coscreens/profile_home_edit.dart';
 import 'anime_chat.dart';
 import 'bottom_nav_bar.dart';
 import 'circle_screen.dart';
+import 'fans_list.dart'; // Import the fans list screen
 import 'home_screen.dart';
 // Import the NotificationScreen
 import 'settings_page.dart';
+import 'supporter_list.dart'; // Import the supporter list screen
 
 class ProfileHome extends StatefulWidget {
   @override
@@ -131,6 +133,20 @@ class _ProfileHomeState extends State<ProfileHome> {
     );
   }
 
+  void _navigateToFansList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => FansList()),
+    );
+  }
+
+  void _navigateToSupporterList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => SupporterList()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -194,9 +210,15 @@ class _ProfileHomeState extends State<ProfileHome> {
                                         MainAxisAlignment.spaceEvenly,
                                     children: [
                                       _buildStatColumn("Posts", "20"),
-                                      _buildStatColumn("Fans", _fansCount),
-                                      _buildStatColumn(
-                                          "Supporting", _supportingCount),
+                                      GestureDetector(
+                                        onTap: _navigateToFansList,
+                                        child: _buildStatColumn("Fans", _fansCount),
+                                      ),
+                                      GestureDetector(
+                                        onTap: _navigateToSupporterList,
+                                        child: _buildStatColumn(
+                                            "Supporting", _supportingCount),
+                                      ),
                                     ],
                                   ),
                                   SizedBox(height: 10.0),
@@ -308,49 +330,46 @@ class _ProfileHomeState extends State<ProfileHome> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Choose Files'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: Icon(Icons.add_a_photo),
-                title: Text('Camera'),
-                onTap: () {
-                  _openCamera(context);
-                  Navigator.pop(context);
-                },
-              ),
-              ListTile(
-                leading: Icon(Icons.add_photo_alternate),
-                title: Text('Gallery'),
-                onTap: () {
-                  _openGallery(context);
-                  Navigator.pop(context);
-                },
-              ),
-            ],
-          ),
+        return SimpleDialog(
+          title: Text('Add Post'),
+          children: <Widget>[
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickImage();
+              },
+              child: Text('Add Photo'),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context);
+                _pickVideo();
+              },
+              child: Text('Add Video'),
+            ),
+            SimpleDialogOption(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancel'),
+            ),
+          ],
         );
       },
     );
   }
 
-  void _openCamera(BuildContext context) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.camera);
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
-      // Handle camera image
-      // You can access the file using pickedFile.path
+      // Handle the picked image file
     }
   }
 
-  void _openGallery(BuildContext context) async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+  Future<void> _pickVideo() async {
+    final pickedFile = await ImagePicker().pickVideo(source: ImageSource.gallery);
     if (pickedFile != null) {
-      // Handle gallery image
-      // You can access the file using pickedFile.path
+      // Handle the picked video file
     }
   }
 }

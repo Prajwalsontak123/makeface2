@@ -7,6 +7,7 @@ import 'package:makeface2/screens/story_section.dart';
 import 'package:makeface2/screens/view_notification.dart';
 
 import 'bottom_nav_bar.dart';
+import 'home_chat.dart';
 
 class HomeScreen extends StatelessWidget {
   final bool userHasStory;
@@ -42,7 +43,7 @@ class HomeScreen extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AnimeChatScreen()),
+                MaterialPageRoute(builder: (context) => HomeChat()),
               );
             },
           ),

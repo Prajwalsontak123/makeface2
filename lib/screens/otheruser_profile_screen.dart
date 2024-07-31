@@ -68,11 +68,9 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
           DocumentReference otherUserRef = querySnapshot.docs.first.reference;
           DocumentSnapshot otherUserSnapshot = await otherUserRef.get();
 
-          // Ensure the fields exist
           Map<String, dynamic> data =
               otherUserSnapshot.data() as Map<String, dynamic>;
 
-          // Check if the fields exist, if not initialize them
           if (!data.containsKey('fans') || !data.containsKey('supporting')) {
             await FirebaseFirestore.instance
                 .collection('loggedin_users')
@@ -83,7 +81,6 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
             }, SetOptions(merge: true));
           }
 
-          // After ensuring the fields are initialized, fetch the counts
           DocumentSnapshot updatedSnapshot = await otherUserRef.get();
           List fansList = updatedSnapshot['fans'] ?? [];
           List supportingList = updatedSnapshot['supporting'] ?? [];
@@ -133,9 +130,15 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
         if (isSupporting) {
           currentUserSupporting.remove(widget.otherUserUniqueName);
           otherUserFans.remove(currentUserUniqueName);
+
+          // Remove the support notification
+          await _removeSupportNotification();
         } else {
           currentUserSupporting.add(widget.otherUserUniqueName);
           otherUserFans.add(currentUserUniqueName);
+
+          // Add the support notification
+          await _addSupportNotification();
         }
 
         transaction
@@ -143,8 +146,8 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
         transaction.update(otherUserRef, {'fans': otherUserFans});
       });
 
-      // Create notification
-      await createNotification(!isSupporting);
+      // Create notification for both users
+      await createNotification(isSupporting);
 
       setState(() {
         isSupporting = !isSupporting;
@@ -154,12 +157,35 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
   }
 
   Future<void> createNotification(bool isStartedSupporting) async {
+    // Notification for current user
     await FirebaseFirestore.instance.collection('notifications').add({
+      'from_unique_name': currentUserUniqueName,
       'to_unique_name': widget.otherUserUniqueName,
       'from_unique_name': currentUserUniqueName,
       'type': isStartedSupporting ? 'started_supporting' : 'stopped_supporting',
       'timestamp': FieldValue.serverTimestamp(),
     });
+
+    // Notification for the other user
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'to_unique_name': currentUserUniqueName,
+      'from_unique_name': widget.otherUserUniqueName,
+      'type': isStartedSupporting ? 'started_supporting' : 'stopped_supporting',
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> _removeSupportNotification() async {
+    QuerySnapshot snapshot = await FirebaseFirestore.instance
+        .collection('notifications')
+        .where('from_unique_name', isEqualTo: currentUserUniqueName)
+        .where('to_unique_name', isEqualTo: widget.otherUserUniqueName)
+        .where('type', isEqualTo: 'started supporting you')
+        .get();
+
+    for (DocumentSnapshot doc in snapshot.docs) {
+      await doc.reference.delete();
+    }
   }
 
   @override
@@ -174,7 +200,11 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
               icon: Icon(Icons.notifications_none),
               onPressed: () {
                 // Navigate to NotificationScreen
-                Navigator.pushNamed(context, '/notifications');
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => ViewNotificationPage()),
+                );
               },
             ),
             IconButton(
@@ -310,9 +340,10 @@ class _OtherUserProfileScreenState extends State<OtherUserProfileScreen> {
         BottomNavigationBarItem(icon: Icon(Icons.home), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.search), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.add_box), label: ''),
-        BottomNavigationBarItem(icon: Icon(Icons.favorite_border), label: ''),
+        BottomNavigationBarItem(icon: Icon(Icons.favorite), label: ''),
         BottomNavigationBarItem(icon: Icon(Icons.person), label: ''),
       ],
+      type: BottomNavigationBarType.fixed,
     );
   }
 }
