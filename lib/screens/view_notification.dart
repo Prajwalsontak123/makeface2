@@ -13,11 +13,7 @@ class ViewNotificationPage extends StatelessWidget {
         title: Text('Notifications'),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore
-            .collection('notifications')
-            .where('to_unique_name', isEqualTo: _auth.currentUser!.displayName)
-            .orderBy('timestamp', descending: true)
-            .snapshots(),
+        stream: _firestore.collection('notifications').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -44,13 +40,15 @@ class ViewNotificationPage extends StatelessWidget {
   }
 
   Widget _buildNotificationTile(DocumentSnapshot document) {
+    // Safely get the fields, providing default values if they don't exist
     String fromUniqueName = document.get('from_unique_name') ?? 'Unknown';
     String type = document.get('type') ?? 'Unknown';
+    String toUniqueName = document.get('to_unique_name') ?? 'Unknown';
     Timestamp? timestamp = document.get('timestamp') as Timestamp?;
 
     return ListTile(
       title: Text(
-        '$fromUniqueName $type',
+        '$fromUniqueName $type $toUniqueName',
       ),
       subtitle: timestamp != null
           ? Text(_formatTimestamp(timestamp))
