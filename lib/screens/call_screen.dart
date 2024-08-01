@@ -1,8 +1,6 @@
 import 'dart:async';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/material.dart';
-import 'package:agora_rtc_engine/agora_rtc_engine.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'call_service.dart';
 
@@ -29,7 +27,7 @@ class CallScreen extends StatefulWidget {
 }
 
 class _CallScreenState extends State<CallScreen> {
-  static const appId = "YOUR_APP_ID"; // Replace with your Agora App ID
+  static const appId = "ae5c61b03fa947c58b48f9e4b40f915e";
   late RtcEngine _engine;
   bool _localUserJoined = false;
   bool _remoteUserJoined = false;
@@ -49,24 +47,13 @@ class _CallScreenState extends State<CallScreen> {
     initAgora();
   }
 
-  Future<String?> _getAgoraToken() async {
-    try {
-      // Implement proper token fetching here
-      // For example, make an API call to your server to get the token
-      // final response = await http.get(Uri.parse('your_token_server_url'));
-      // return response.body;
-      
-      // For testing, return a temporary token:
-      return "006YOUR_TEMPORARY_TOKEN_HERE";
-    } catch (e) {
-      print("Error fetching Agora token: $e");
-      return null;
-    }
-  }
-
   Future<void> initAgora() async {
     try {
-      await [Permission.microphone, Permission.camera].request();
+      if (!await Permission.microphone.isGranted ||
+          (widget.isVideo && !await Permission.camera.isGranted)) {
+        print("Permissions not granted");
+        await [Permission.microphone, Permission.camera].request();
+      }
 
       _engine = createAgoraRtcEngine();
       await _engine.initialize(RtcEngineContext(appId: appId));
@@ -105,22 +92,26 @@ class _CallScreenState extends State<CallScreen> {
         await _engine.enableVideo();
       }
 
-      // Update call status to 'answered' when joining the channel
       await CallService.updateCallStatus(widget.callId, CallService.CALL_STATE_ANSWERED);
+      print("Call status updated to ANSWERED");
 
-      String? token = await _getAgoraToken();
+      String? token = await CallService.getAgoraToken(widget.channelName);
       if (token == null) {
         print("Error: Unable to get Agora token");
         return;
       }
 
       print("Joining channel: ${widget.channelName} with token: $token");
-      await _engine.joinChannel(
-        token: token,
-        channelId: widget.channelName,
-        uid: 0,
-        options: const ChannelMediaOptions(),
-      );
+      try {
+        await _engine.joinChannel(
+          token: token,
+          channelId: widget.channelName,
+          uid: 0,
+          options: const ChannelMediaOptions(),
+        );
+      } catch (e) {
+        print("Error joining channel: $e");
+      }
     } catch (e) {
       print("Error initializing Agora: $e");
     }
@@ -196,12 +187,13 @@ class _CallScreenState extends State<CallScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        _remoteUserJoined ? "Connected" : "Calling...",
+                        _remoteUserJoined ? "Connected" : "Waiting for ${widget.otherUserName} to join...",
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.white.withOpacity(0.8),
                         ),
                       ),
+                      if (!_remoteUserJoined) CircularProgressIndicator(),
                     ],
                   ),
                 ),

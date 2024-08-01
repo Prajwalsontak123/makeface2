@@ -59,6 +59,9 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
       );
     } catch (e) {
       print("Error answering call: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to answer call: $e")),
+      );
     }
   }
 
@@ -69,6 +72,9 @@ class _IncomingCallScreenState extends State<IncomingCallScreen> {
       Navigator.pop(context);
     } catch (e) {
       print("Error rejecting call: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Failed to reject call: $e")),
+      );
     }
   }
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -40,27 +42,19 @@ class CallService {
   }
 
   static Future<void> answerCall(String callId) async {
-    await _firestore.collection('calls').doc(callId).update({
-      'status': CALL_STATE_ANSWERED,
-    });
+    await updateCallStatus(callId, CALL_STATE_ANSWERED);
   }
 
   static Future<void> rejectCall(String callId) async {
-    await _firestore.collection('calls').doc(callId).update({
-      'status': CALL_STATE_BUSY,
-    });
+    await updateCallStatus(callId, CALL_STATE_BUSY);
   }
 
   static Future<void> endCall(String callId) async {
-    await _firestore.collection('calls').doc(callId).update({
-      'status': CALL_STATE_ENDED,
-    });
+    await updateCallStatus(callId, CALL_STATE_ENDED);
   }
 
   static Future<void> markCallAsMissed(String callId) async {
-    await _firestore.collection('calls').doc(callId).update({
-      'status': CALL_STATE_MISSED,
-    });
+    await updateCallStatus(callId, CALL_STATE_MISSED);
   }
 
   static Stream<QuerySnapshot>? getIncomingCallStream() {
@@ -110,22 +104,38 @@ class CallService {
     };
   }
 
-  // New method to update call status
   static Future<void> updateCallStatus(String callId, String status) async {
     await _firestore.collection('calls').doc(callId).update({
       'status': status,
     });
   }
 
-  // New method to get a specific call document
   static Future<DocumentSnapshot> getCallDocument(String callId) {
     return _firestore.collection('calls').doc(callId).get();
   }
 
-  // New method to listen for changes in call status
   static Stream<String> callStatusStream(String callId) {
     return _firestore.collection('calls').doc(callId).snapshots().map((snapshot) {
       return snapshot.data()?['status'] as String? ?? CALL_STATE_ENDED;
     });
   }
+
+  static Future<String?> getAgoraToken(String channelName) async {
+  try {
+    final url = 'http://192.168.133.62:3000/getToken?channelName=$channelName';
+    print("Attempting to fetch token from: $url");
+    final response = await http.get(Uri.parse(url));
+    print("Response status: ${response.statusCode}");
+    print("Response body: ${response.body}");
+    if (response.statusCode == 200) {
+      return json.decode(response.body)['token'];
+    } else {
+      print("Failed to fetch token: ${response.statusCode}");
+      return null;
+    }
+  } catch (e) {
+    print("Error fetching Agora token: $e");
+    return null;
+  }
+}
 }
